@@ -22,6 +22,8 @@ import {
   cloneState,
 } from './game.js';
 
+const EVALUATE_URL = '/api/evaluate';
+
 const $ = (sel) => document.querySelector(sel);
 
 let state = standardDeal();
@@ -47,7 +49,6 @@ const els = {
   preset: $('#preset'),
   btnApply: $('#btn-apply-state'),
   btnExport: $('#btn-export-state'),
-  evalUrl: $('#eval-url'),
   evalStatus: $('#eval-status'),
   evalContent: $('#eval-content'),
   evalScore: $('#eval-score'),
@@ -448,7 +449,6 @@ function formatEngineBestMove(move) {
 }
 
 async function fetchEval(gameState) {
-  const url = els.evalUrl.value.trim() || '/api/evaluate';
   if (gameState.result) {
     return {
       score: 0,
@@ -463,7 +463,7 @@ async function fetchEval(gameState) {
   const payload = buildEvaluateRequest(gameState);
 
   try {
-    const res = await fetch(url, {
+    const res = await fetch(EVALUATE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
