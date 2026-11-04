@@ -405,13 +405,12 @@ function formatEngineBestMove(move) {
 function ensureEvalElements() {
   if (!rootEl) return false;
   if (!els.evalScore) {
+    els.evalScoreLabel = $('#eval-score-label', rootEl);
     els.evalScore = $('#eval-score', rootEl);
     els.evalBar = $('#eval-bar', rootEl);
-    els.evalWin = $('#eval-win', rootEl);
-    els.evalLose = $('#eval-lose', rootEl);
     els.evalNote = $('#eval-note', rootEl);
   }
-  return !!(els.evalScore && els.evalBar && els.evalWin && els.evalLose && els.evalNote);
+  return !!(els.evalScore && els.evalBar && els.evalNote);
 }
 
 async function fetchEval(gameState) {
@@ -469,11 +468,10 @@ function displayEval(data) {
   if (!ensureEvalElements()) return;
 
   if (data.source === 'unavailable') {
+    els.evalScoreLabel.hidden = false;
     els.evalScore.textContent = '—';
     els.evalScore.style.color = 'var(--text-muted)';
     els.evalBar.style.marginLeft = '-25%';
-    els.evalWin.textContent = '—';
-    els.evalLose.textContent = '—';
     els.evalNote.textContent = data.note || 'Engine unreachable';
     return;
   }
@@ -484,12 +482,15 @@ function displayEval(data) {
   const forced = winIn != null || loseIn != null;
 
   if (winIn != null) {
-    els.evalScore.textContent = `+#${winIn}`;
+    els.evalScoreLabel.hidden = true;
+    els.evalScore.textContent = `Win in ${formatTurns(winIn)}`;
     els.evalScore.style.color = 'var(--p1)';
   } else if (loseIn != null) {
-    els.evalScore.textContent = `-#${loseIn}`;
+    els.evalScoreLabel.hidden = true;
+    els.evalScore.textContent = `Lose in ${formatTurns(loseIn)}`;
     els.evalScore.style.color = 'var(--p2)';
   } else {
+    els.evalScoreLabel.hidden = false;
     const scoreText = score > 0 ? `+${score.toFixed(2)}` : score.toFixed(2);
     els.evalScore.textContent = scoreText;
     els.evalScore.style.color = score > 0 ? 'var(--p1)' : score < 0 ? 'var(--p2)' : 'var(--text)';
@@ -500,13 +501,11 @@ function displayEval(data) {
   els.evalBar.style.marginLeft = `${pct - 50}%`;
   els.evalBar.style.width = '50%';
 
-  els.evalWin.textContent = winIn != null ? formatPlies(winIn) : '—';
-  els.evalLose.textContent = loseIn != null ? formatPlies(loseIn) : '—';
   els.evalNote.textContent = data.note || '';
 }
 
-function formatPlies(n) {
-  return n === 1 ? '1 ply' : `${n} plies`;
+function formatTurns(n) {
+  return n === 1 ? '1 turn' : `${n} turns`;
 }
 
 function scheduleEval() {
@@ -568,10 +567,9 @@ function cacheElements() {
     btnExport: $('#btn-export-state', rootEl),
     btnEditPosition: $('#btn-edit-position', rootEl),
     evalContent: $('#eval-content', rootEl),
+    evalScoreLabel: $('#eval-score-label', rootEl),
     evalScore: $('#eval-score', rootEl),
     evalBar: $('#eval-bar', rootEl),
-    evalWin: $('#eval-win', rootEl),
-    evalLose: $('#eval-lose', rootEl),
     evalNote: $('#eval-note', rootEl),
   };
 }
