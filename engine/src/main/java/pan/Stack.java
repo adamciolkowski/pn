@@ -5,63 +5,55 @@ import java.util.List;
 
 public class Stack {
 
-    private static final Rank[] RANKS = Rank.values();
-    private static final Suit[] SUITS = Suit.values();
-
-    int bits;
+    private CardSet cards;
 
     public static Stack encode(List<Card> stack) {
-        return new Stack(HandOperations.encode(stack));
+        return new Stack(CardSet.from(stack));
     }
 
     public Stack copy() {
-        return new Stack(bits);
+        return new Stack(cards);
     }
 
-    private Stack(int bits) {
-        this.bits = bits;
+    private Stack(CardSet cards) {
+        this.cards = cards;
     }
 
     public boolean isEmpty() {
-        return HandOperations.isEmpty(bits);
+        return cards.isEmpty();
     }
 
     public int size() {
-        return HandOperations.count(bits);
+        return cards.count();
     }
 
     public Stack addCard(Card card) {
-        return new Stack(HandOperations.addCard(bits, card));
+        return new Stack(cards.add(card));
     }
 
     public Stack addFourCards(Rank rank) {
-        return new Stack(HandOperations.addFourCards(bits, rank));
+        return new Stack(cards.addFourCards(rank));
     }
 
-    public Stack remove(CardSet cards) {
-        return new Stack(bits & ~cards.bits);
+    public Stack remove(CardSet taken) {
+        return new Stack(cards.remove(taken));
     }
 
     List<Card> decode() {
-        List<Card> cards = new ArrayList<>();
+        List<Card> decoded = new ArrayList<>();
+        int bits = cards.bits;
         for (int i = 24 - 1; i >= 0; i--) {
             if ((bits & (1 << i)) != 0) {
-                cards.add(cardFromIndex(i));
+                decoded.add(CardSet.cardFromIndex(i));
             }
         }
-        return cards;
-    }
-
-    private static Card cardFromIndex(int idx) {
-        Rank rank = RANKS[idx / 4];
-        Suit suit = SUITS[idx % 4];
-        return Card.of(rank, suit);
+        return decoded;
     }
 
     Card peek() {
         assert !isEmpty();
         int topCardIdx = bitIndexOfCardOnTop();
-        return cardFromIndex(topCardIdx);
+        return CardSet.cardFromIndex(topCardIdx);
     }
 
     CardSet MUTABLE_popThree() {
@@ -78,13 +70,17 @@ public class Stack {
 
     private CardSet MUTABLE_pop() {
         int i = bitIndexOfCardOnTop();
-        int card = 1 << i;
-        bits &= ~card;
-        return new CardSet(card);
+        CardSet card = new CardSet(1 << i);
+        cards = cards.remove(card);
+        return card;
     }
 
     private int bitIndexOfCardOnTop() {
-        return Integer.SIZE - 1 - Integer.numberOfLeadingZeros(bits);
+        return Integer.SIZE - 1 - Integer.numberOfLeadingZeros(cards.bits);
+    }
+
+    CardSet cardSet() {
+        return cards;
     }
 
     @Override
@@ -92,17 +88,16 @@ public class Stack {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Stack stack = (Stack) o;
-        return bits == stack.bits;
+        return cards.equals(stack.cards);
     }
 
     @Override
     public int hashCode() {
-        return bits;
+        return cards.hashCode();
     }
 
     @Override
     public String toString() {
-        List<Card> cards = HandOperations.decode(bits);
         return cards.toString();
     }
 }

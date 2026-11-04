@@ -6,15 +6,15 @@ import java.util.List;
 
 public class PanState {
 
-    private final CardSet player, opponent;
+    private final Hand player, opponent;
     private final Stack stack;
     private final boolean playersTurn;
 
     public PanState(List<Card> player, List<Card> opponent, List<Card> stack, boolean playersTurn) {
-        this(CardSet.from(player), CardSet.from(opponent), Stack.encode(stack), playersTurn);
+        this(Hand.from(player), Hand.from(opponent), Stack.encode(stack), playersTurn);
     }
 
-    private PanState(CardSet player, CardSet opponent, Stack stack, boolean playersTurn) {
+    private PanState(Hand player, Hand opponent, Stack stack, boolean playersTurn) {
         verify(player, opponent, stack);
         this.player = player;
         this.opponent = opponent;
@@ -22,16 +22,16 @@ public class PanState {
         this.playersTurn = playersTurn;
     }
 
-    private void verify(CardSet player, CardSet opponent, Stack stack) {
-        extracted(player.bits, opponent.bits);
-        extracted(player.bits, stack.bits);
-        extracted(opponent.bits, stack.bits);
+    private void verify(Hand player, Hand opponent, Stack stack) {
+        extracted(player.cardSet(), opponent.cardSet());
+        extracted(player.cardSet(), stack.cardSet());
+        extracted(opponent.cardSet(), stack.cardSet());
     }
 
-    private static void extracted(int a, int b) {
-        int and = a & b;
-        if (and != 0) {
-            Iterator<Card> it = new CardSet(and).cards();
+    private static void extracted(CardSet a, CardSet b) {
+        CardSet overlap = a.intersect(b);
+        if (!overlap.isEmpty()) {
+            Iterator<Card> it = overlap.cards();
             StringBuilder sb = new StringBuilder();
             while (it.hasNext()) {
                 sb.append(it.next());
@@ -43,7 +43,7 @@ public class PanState {
         }
     }
 
-    static void addSingleCardMoves(CardSet hand, Card onTopOfDeck, List<PanMove> moves) {
+    static void addSingleCardMoves(Hand hand, Card onTopOfDeck, List<PanMove> moves) {
 //        int sameOrHigher = onTopOfDeck.rank().ordinal() * 4;
         Card prev = null;
         for (Iterator<Card> it = hand.cards(); it.hasNext(); ) {
@@ -61,7 +61,7 @@ public class PanState {
         }
     }
 
-    static void addFourCardMoves(CardSet cards, Card onTopOfDeck, List<PanMove> moves) {
+    static void addFourCardMoves(Hand cards, Card onTopOfDeck, List<PanMove> moves) {
 //        int idxOfFirstHigher = (onTopOfDeck.rank().ordinal() + 1) * 4;
         for (Rank rank : cards.fourCards()) {
             if (rank.compareTo(onTopOfDeck.rank()) < 0) {
@@ -81,7 +81,7 @@ public class PanState {
     }
 
     public List<PanMove> getLegalMoves() {
-        CardSet player = currentPlayer();
+        Hand player = currentPlayer();
         if (stack.isEmpty()) {
             PanMove.OneCard playNineOfHearts = new PanMove.OneCard(Card.of(Rank.NINE, Suit.HEARTS));
             if (player.hasFourNines()) {
@@ -99,7 +99,7 @@ public class PanState {
         return moves;
     }
 
-    private CardSet currentPlayer() {
+    private Hand currentPlayer() {
         return playersTurn ? player : opponent;
     }
 
