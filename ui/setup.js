@@ -5,6 +5,7 @@ import {
   standardDeal,
   midgameExample,
   cloneState,
+  playerWithNineHearts,
   emptySetupState,
   RANKS,
   SUITS,
