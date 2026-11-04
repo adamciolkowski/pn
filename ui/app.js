@@ -398,9 +398,69 @@ function localFallbackEval(gameState) {
   };
 }
 
+/** Wire format for pan.http.Server RequestDto (players, stack, currentPlayer). */
+function buildEvaluateRequest(gameState) {
+  const s = serializeState(gameState);
+  return {
+    players: s.players,
+    stack: s.stack,
+    currentPlayer: s.currentPlayer,
+  };
+}
+
+const ENGINE_SUIT = { HEARTS: 'H', CLUBS: 'C', DIAMONDS: 'D', SPADES: 'S' };
+const ENGINE_RANK = {
+  NINE: '9',
+  TEN: '10',
+  JACK: 'J',
+  QUEEN: 'Q',
+  KING: 'K',
+  ACE: 'A',
+};
+
+function formatEngineBestMove(move) {
+  if (move == null) return '';
+  if (typeof move === 'string') return move;
+  if (move.type === 'one' && move.card) {
+    return formatCard(parseCard(move.card));
+  }
+  if (move.type === 'four' && move.rank) {
+    return `Four ${move.rank}s`;
+  }
+  if (move.type === 'pickup') {
+    return 'Pick up from stack';
+  }
+  if (move.card != null) {
+    const c = move.card;
+    if (typeof c === 'string') return c;
+    const rank = ENGINE_RANK[c.rank] ?? c.rank;
+    const suit = ENGINE_SUIT[c.suit] ?? c.suit;
+    if (rank && suit && typeof suit === 'string' && suit.length === 1) {
+      return formatCard({ rank, suit });
+    }
+    return `${rank}${suit}`;
+  }
+  if (move.rank != null) {
+    const rank = ENGINE_RANK[move.rank] ?? move.rank;
+    return `Four ${rank}s`;
+  }
+  return 'Pick up from stack';
+}
+
 async function fetchEval(gameState) {
   const url = els.evalUrl.value.trim() || '/api/evaluate';
-  const payload = { state: serializeState(gameState) };
+  if (gameState.result) {
+    return {
+      score: 0,
+      winIn: null,
+      loseIn: null,
+      bestMove: null,
+      note: 'Deal finished — no engine evaluation.',
+      source: 'engine',
+    };
+  }
+
+  const payload = buildEvaluateRequest(gameState);
 
   try {
     const res = await fetch(url, {
@@ -410,12 +470,16 @@ async function fetchEval(gameState) {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const bestMove = data.bestMove ?? data.best_move ?? null;
+    const noteParts = [];
+    if (bestMove != null) noteParts.push(`Best: ${formatEngineBestMove(bestMove)}`);
     return {
       score: data.score ?? 0,
       winIn: data.winIn ?? data.win_in ?? null,
       loseIn: data.loseIn ?? data.lose_in ?? null,
-      bestMove: data.bestMove ?? data.best_move ?? null,
-      note: data.note ?? '',
+      bestMove,
+      note: noteParts.join(' · '),
       source: 'engine',
     };
   } catch {
@@ -434,7 +498,8 @@ function displayEval(data) {
   els.evalScore.textContent = scoreText;
   els.evalScore.style.color = score > 0 ? 'var(--p1)' : score < 0 ? 'var(--p2)' : 'var(--text)';
 
-  const pct = Math.max(0, Math.min(100, 50 + score * 25));
+  const barUnit = data.source === 'engine' ? score / 100 : score;
+  const pct = Math.max(0, Math.min(100, 50 + barUnit * 25));
   els.evalBar.style.marginLeft = `${pct - 50}%`;
   els.evalBar.style.width = '50%';
 

@@ -89,10 +89,7 @@ public class PanEvaluator {
             for (PanMove move : moves) {
                 PanState newState = state.move(move);
                 Integer contains = evaluatedStates.get(newState);
-                if (contains != null) {
-                    if (contains != depth) {
-                        throw new IllegalArgumentException();
-                    }
+                if (contains != null && contains == depth) {
                     skippedDueToRepetition++;
                     continue;
                 }
@@ -110,10 +107,7 @@ public class PanEvaluator {
             for (PanMove move : moves) {
                 PanState newState = state.move(move);
                 Integer contains = evaluatedStates.get(newState);
-                if (contains != null) {
-                    if (contains != depth) {
-                        throw new IllegalArgumentException();
-                    }
+                if (contains != null && contains == depth) {
                     skippedDueToRepetition++;
                     continue;
                 }

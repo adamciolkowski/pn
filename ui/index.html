@@ -115,7 +115,7 @@
           <span>Evaluate URL</span>
           <input type="url" id="eval-url" value="/api/evaluate" placeholder="/api/evaluate">
         </label>
-        <p class="help-text">POST JSON <code>{ "state": … }</code>. Shows fallback when unreachable.</p>
+        <p class="help-text">POST JSON with <code>players</code>, <code>stack</code>, <code>currentPlayer</code>. Run <code>pan.http.Server</code> on port 8080 (serves this UI and the API). Shows fallback when unreachable.</p>
       </section>
 
       <section class="panel-section rules-summary">
