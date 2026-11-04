@@ -540,13 +540,6 @@ function bindEvents() {
     els.stateJson.value = JSON.stringify(serializeState(state), null, 2);
   });
   els.preset.addEventListener('change', () => loadPreset(els.preset.value));
-  els.btnEditPosition?.addEventListener('click', () => {
-    window.dispatchEvent(
-      new CustomEvent('pan:navigate', {
-        detail: { view: 'setup', state: cloneState(state) },
-      })
-    );
-  });
 }
 
 function cacheElements() {
@@ -565,7 +558,6 @@ function cacheElements() {
     preset: $('#preset', rootEl),
     btnApply: $('#btn-apply-state', rootEl),
     btnExport: $('#btn-export-state', rootEl),
-    btnEditPosition: $('#btn-edit-position', rootEl),
     evalContent: $('#eval-content', rootEl),
     evalScoreLabel: $('#eval-score-label', rootEl),
     evalScore: $('#eval-score', rootEl),
