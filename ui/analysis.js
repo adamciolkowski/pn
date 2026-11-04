@@ -416,11 +416,8 @@ function ensureEvalElements() {
 async function fetchEval(gameState) {
   if (gameState.result) {
     return {
-      score: 0,
-      winIn: null,
-      loseIn: null,
-      bestMove: null,
-      note: 'Deal finished — no engine evaluation.',
+      finished: true,
+      note: 'Deal finished',
       source: 'engine',
     };
   }
@@ -473,6 +470,15 @@ function displayEval(data) {
     els.evalScore.style.color = 'var(--text-muted)';
     els.evalBar.style.marginLeft = '-25%';
     els.evalNote.textContent = data.note || 'Engine unreachable';
+    return;
+  }
+
+  if (data.finished) {
+    els.evalScoreLabel.hidden = false;
+    els.evalScore.textContent = '-';
+    els.evalScore.style.color = 'var(--text)';
+    els.evalBar.style.marginLeft = '0%';
+    els.evalNote.textContent = data.note || 'Deal finished';
     return;
   }
 
