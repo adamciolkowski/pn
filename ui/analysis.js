@@ -18,6 +18,7 @@ import {
   playerWithNineHearts,
   formatMove,
   cloneState,
+  formatCard,
 } from './game.js';
 import { renderCardElement } from './card-ui.js';
 
@@ -31,13 +32,16 @@ function resolveEvaluateUrl() {
 
   if (location.port === '8080') return '/api/evaluate';
 
-  const host = location.hostname === '127.0.0.1' ? 'localhost' : location.hostname;
-  return `${location.protocol}//${host}:8080/api/evaluate`;
+  if (location.port === '8080') return '/api/evaluate';
+
+  return `${location.protocol}//${location.hostname}:8080/api/evaluate`;
 }
 
-const EVALUATE_URL = resolveEvaluateUrl();
+function getEvaluateUrl() {
+  return resolveEvaluateUrl();
+}
 
-const $ = (sel, root) => root.querySelector(sel);
+const $ = (sel, root) => root?.querySelector(sel) ?? null;
 
 let rootEl;
 let state = standardDeal();
@@ -45,6 +49,7 @@ let history = [cloneState(state)];
 let historyIndex = 0;
 let selected = new Set();
 let evalDebounce = null;
+let evalGeneration = 0;
 let els = {};
 
 function renderCard(c, opts = {}) {
@@ -397,6 +402,18 @@ function formatEngineBestMove(move) {
   return '';
 }
 
+function ensureEvalElements() {
+  if (!rootEl) return false;
+  if (!els.evalScore) {
+    els.evalScore = $('#eval-score', rootEl);
+    els.evalBar = $('#eval-bar', rootEl);
+    els.evalWin = $('#eval-win', rootEl);
+    els.evalLose = $('#eval-lose', rootEl);
+    els.evalNote = $('#eval-note', rootEl);
+  }
+  return !!(els.evalScore && els.evalBar && els.evalWin && els.evalLose && els.evalNote);
+}
+
 async function fetchEval(gameState) {
   if (gameState.result) {
     return {
@@ -412,12 +429,21 @@ async function fetchEval(gameState) {
   const payload = buildEvaluateRequest(gameState);
 
   try {
-    const res = await fetch(EVALUATE_URL, {
+    const res = await fetch(getEvaluateUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      let message = `HTTP ${res.status}`;
+      try {
+        const errBody = await res.json();
+        if (errBody.error) message = errBody.error;
+      } catch {
+        /* ignore */
+      }
+      throw new Error(message);
+    }
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     const bestMove = data.bestMove ?? data.best_move ?? null;
@@ -431,19 +457,24 @@ async function fetchEval(gameState) {
       note: noteParts.join(' · '),
       source: 'engine',
     };
-  } catch {
-    return { source: 'unavailable' };
+  } catch (e) {
+    return {
+      source: 'unavailable',
+      note: e instanceof Error ? e.message : 'Engine unreachable',
+    };
   }
 }
 
 function displayEval(data) {
+  if (!ensureEvalElements()) return;
+
   if (data.source === 'unavailable') {
     els.evalScore.textContent = '—';
     els.evalScore.style.color = 'var(--text-muted)';
     els.evalBar.style.marginLeft = '-25%';
     els.evalWin.textContent = '—';
     els.evalLose.textContent = '—';
-    els.evalNote.textContent = 'Engine unreachable';
+    els.evalNote.textContent = data.note || 'Engine unreachable';
     return;
   }
 
@@ -463,10 +494,13 @@ function displayEval(data) {
 }
 
 function scheduleEval() {
+  if (!ensureEvalElements()) return;
   clearTimeout(evalDebounce);
+  const generation = ++evalGeneration;
   els.evalNote.textContent = 'Analyzing…';
   evalDebounce = setTimeout(async () => {
     const data = await fetchEval(state);
+    if (generation !== evalGeneration) return;
     displayEval(data);
   }, 280);
 }
@@ -530,6 +564,7 @@ function cacheElements() {
 export function startAnalysis(initialState) {
   rootEl = document.getElementById('view-analysis');
   cacheElements();
+  ensureEvalElements();
   bindEvents();
 
   const next = initialState ? cloneState(initialState) : standardDeal(true);
