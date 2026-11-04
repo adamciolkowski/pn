@@ -22,15 +22,12 @@ public class PanService {
         Server.ResponseDto response = new Server.ResponseDto();
         response.bestMove = serializeMove(moveAndScore.move());
         int score = moveAndScore.score();
-        if (request.currentPlayer != 0) {
-            score = -score;
-        }
         response.score = score;
         applyWinDistance(response, score);
         return response;
     }
 
-    /** Turns until a proven win/loss for the side to move ({@code 100 - score + depth}). */
+    /** Turns until a proven win or loss for player 1 ({@code 100 - score + depth}). */
     static void applyWinDistance(Server.ResponseDto response, int score) {
         if (score >= WIN_SCORE) {
             response.winIn = WIN_SCORE - score + SEARCH_DEPTH;

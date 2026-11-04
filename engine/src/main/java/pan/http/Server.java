@@ -212,9 +212,9 @@ public class Server {
     public static class ResponseDto {
         public int score;
         public Object bestMove;
-        /** Turns until the side to move forces a win, when the search proves it. */
+        /** Turns until player 1 wins, when the search proves it. */
         public Integer winIn;
-        /** Turns until the side to move is lost, when the search proves it. */
+        /** Turns until player 1 loses, when the search proves it. */
         public Integer loseIn;
 
         public ResponseDto() {

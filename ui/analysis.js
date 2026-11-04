@@ -483,11 +483,11 @@ function displayEval(data) {
 
   if (winIn != null) {
     els.evalScoreLabel.hidden = true;
-    els.evalScore.textContent = `Win in ${formatTurns(winIn)}`;
+    els.evalScore.textContent = `Player 1 wins in ${formatTurns(winIn)}`;
     els.evalScore.style.color = 'var(--p1)';
   } else if (loseIn != null) {
     els.evalScoreLabel.hidden = true;
-    els.evalScore.textContent = `Lose in ${formatTurns(loseIn)}`;
+    els.evalScore.textContent = `Player 1 loses in ${formatTurns(loseIn)}`;
     els.evalScore.style.color = 'var(--p2)';
   } else {
     els.evalScoreLabel.hidden = false;
