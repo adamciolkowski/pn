@@ -330,6 +330,10 @@ body {
   margin-bottom: 20px;
 }
 
+.panel-section--eval {
+  margin-bottom: 16px;
+}
+
 .panel-section h2 {
   margin: 0 0 10px;
   font-size: 0.7rem;

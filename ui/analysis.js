@@ -438,15 +438,14 @@ async function fetchEval(gameState) {
 
 function displayEval(data) {
   if (data.source === 'unavailable') {
-    els.evalContent.classList.add('hidden');
-    els.evalStatus.className = 'eval-status eval-status--unavailable';
-    els.evalStatus.textContent = 'Engine unreachable';
+    els.evalScore.textContent = '—';
+    els.evalScore.style.color = 'var(--text-muted)';
+    els.evalBar.style.marginLeft = '-25%';
+    els.evalWin.textContent = '—';
+    els.evalLose.textContent = '—';
+    els.evalNote.textContent = 'Engine unreachable';
     return;
   }
-
-  els.evalContent.classList.remove('hidden');
-  els.evalStatus.className = 'eval-status eval-status--engine';
-  els.evalStatus.textContent = 'Engine';
 
   const score = Number(data.score);
   const scoreText = score > 0 ? `+${score.toFixed(2)}` : score.toFixed(2);
@@ -465,8 +464,7 @@ function displayEval(data) {
 
 function scheduleEval() {
   clearTimeout(evalDebounce);
-  els.evalStatus.className = 'eval-status eval-status--loading';
-  els.evalStatus.textContent = 'Analyzing…';
+  els.evalNote.textContent = 'Analyzing…';
   evalDebounce = setTimeout(async () => {
     const data = await fetchEval(state);
     displayEval(data);
@@ -519,7 +517,6 @@ function cacheElements() {
     btnApply: $('#btn-apply-state', rootEl),
     btnExport: $('#btn-export-state', rootEl),
     btnEditPosition: $('#btn-edit-position', rootEl),
-    evalStatus: $('#eval-status', rootEl),
     evalContent: $('#eval-content', rootEl),
     evalScore: $('#eval-score', rootEl),
     evalBar: $('#eval-bar', rootEl),
