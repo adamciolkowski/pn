@@ -7,7 +7,7 @@ export const RANK_VALUE = { '9': 0, '10': 1, J: 2, Q: 3, K: 4, A: 5 };
 
 /** @typedef {{ rank: string, suit: string }} Card */
 /** @typedef {{ hand: Card[] }} Player */
-/** @typedef {{ players: Player[], stack: Card[], currentPlayer: number, variantSpades: boolean }} GameState */
+/** @typedef {{ players: Player[], stack: Card[], currentPlayer: number }} GameState */
 
 export function cardId(c) {
   return `${c.rank}${c.suit}`;
@@ -54,7 +54,6 @@ export function standardDeal(seedOrdered = false) {
     players: [{ hand: sortHand(p0) }, { hand: sortHand(p1) }],
     stack: [],
     currentPlayer: opener,
-    variantSpades: false,
   };
 }
 
@@ -66,7 +65,6 @@ export function midgameExample() {
     ],
     stack: parseCards(['9H', '10D', 'JS', 'QS']),
     currentPlayer: 1,
-    variantSpades: false,
   };
 }
 
@@ -253,9 +251,6 @@ function nextPlayer(state, playedCards, wasPickup) {
   if (wasPickup) {
     return (state.currentPlayer + 1) % 2;
   }
-  if (state.variantSpades && playedCards.some((c) => c.suit === 'S')) {
-    return (state.currentPlayer - 1 + 2) % 2;
-  }
   return (state.currentPlayer + 1) % 2;
 }
 
@@ -359,7 +354,6 @@ export function serializeState(state) {
     })),
     stack: state.stack.map(cardId),
     currentPlayer: state.currentPlayer,
-    variantSpades: state.variantSpades,
     ...(state.result ? { result: state.result } : {}),
     ...(state.winner !== undefined ? { winner: state.winner } : {}),
   };
@@ -372,7 +366,6 @@ export function deserializeState(obj) {
     })),
     stack: parseCards(obj.stack ?? []),
     currentPlayer: obj.currentPlayer ?? 0,
-    variantSpades: !!obj.variantSpades,
   };
   if (obj.result) state.result = obj.result;
   if (obj.winner !== undefined) state.winner = obj.winner;

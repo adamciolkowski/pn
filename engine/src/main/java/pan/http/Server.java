@@ -159,12 +159,10 @@ public class Server {
             if (players == null || players.length < 2) {
                 throw new IllegalArgumentException("Expected two players with hands");
             }
-            return new PanState(
-                    toCards(players[0].hand),
-                    toCards(players[1].hand),
-                    toCards(stack != null ? stack : List.of()),
-                    currentPlayer == 0
-            );
+            List<Card> first = toCards(players[0].hand);
+            List<Card> second = toCards(players[1].hand);
+            List<Card> pile = toCards(stack != null ? stack : List.of());
+            return new PanState(first, second, pile, currentPlayer == 0);
         }
 
         private List<Card> toCards(List<String> hand) {

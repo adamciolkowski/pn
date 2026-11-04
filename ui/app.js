@@ -12,7 +12,6 @@ import {
   applyPlay,
   applyPickup,
   mustPickup,
-  canPlay,
   canPickupFromStack,
   sortHand,
   isOpening,
@@ -22,7 +21,7 @@ import {
   cloneState,
 } from './game.js';
 
-const EVALUATE_URL = '/api/evaluate';
+const EVALUATE_URL = 'http://localhost:8080/api/evaluate';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -39,7 +38,6 @@ const els = {
   p0Count: $('#p0-count'),
   p1Count: $('#p1-count'),
   currentPlayer: $('#current-player'),
-  variantSpades: $('#variant-spades'),
   btnPickup: $('#btn-pickup'),
   actionHint: $('#action-hint'),
   moveList: $('#move-list'),
@@ -258,7 +256,6 @@ function render() {
   els.p1Count.textContent = `${state.players[1].hand.length} cards`;
 
   els.currentPlayer.value = String(state.currentPlayer);
-  els.variantSpades.checked = state.variantSpades;
 
   els.btnUndo.disabled = historyIndex <= 0;
   els.btnRedo.disabled = historyIndex >= history.length - 1;
@@ -382,23 +379,6 @@ function loadPreset(name) {
   render();
 }
 
-function localFallbackEval(gameState) {
-  const p0 = gameState.players[0].hand.length;
-  const p1 = gameState.players[1].hand.length;
-  const total = p0 + p1 || 1;
-  const score = ((p1 - p0) / total) * 2;
-  const pi = gameState.currentPlayer;
-  const can = canPlay(gameState, pi);
-  return {
-    score: Math.round(score * 100) / 100,
-    winIn: can && pi === 0 && p0 <= 2 ? p0 : null,
-    loseIn: can && pi === 0 && p1 <= 2 ? p1 : null,
-    bestMove: null,
-    note: 'Heuristic fallback (engine offline). Card count only.',
-    source: 'fallback',
-  };
-}
-
 /** Wire format for pan.http.Server RequestDto (players, stack, currentPlayer). */
 function buildEvaluateRequest(gameState) {
   const s = serializeState(gameState);
@@ -483,22 +463,28 @@ async function fetchEval(gameState) {
       source: 'engine',
     };
   } catch {
-    return localFallbackEval(gameState);
+    return { source: 'unavailable' };
   }
 }
 
 function displayEval(data) {
+  if (data.source === 'unavailable') {
+    els.evalContent.classList.add('hidden');
+    els.evalStatus.className = 'eval-status eval-status--unavailable';
+    els.evalStatus.textContent = 'Engine unreachable';
+    return;
+  }
+
   els.evalContent.classList.remove('hidden');
-  els.evalStatus.className = `eval-status eval-status--${data.source === 'engine' ? 'engine' : 'fallback'}`;
-  els.evalStatus.textContent =
-    data.source === 'engine' ? 'Engine' : 'Fallback — engine unreachable';
+  els.evalStatus.className = 'eval-status eval-status--engine';
+  els.evalStatus.textContent = 'Engine';
 
   const score = Number(data.score);
   const scoreText = score > 0 ? `+${score.toFixed(2)}` : score.toFixed(2);
   els.evalScore.textContent = scoreText;
   els.evalScore.style.color = score > 0 ? 'var(--p1)' : score < 0 ? 'var(--p2)' : 'var(--text)';
 
-  const barUnit = data.source === 'engine' ? score / 100 : score;
+  const barUnit = score / 100;
   const pct = Math.max(0, Math.min(100, 50 + barUnit * 25));
   els.evalBar.style.marginLeft = `${pct - 50}%`;
   els.evalBar.style.width = '50%';
@@ -529,10 +515,6 @@ els.preset.addEventListener('change', () => loadPreset(els.preset.value));
 els.currentPlayer.addEventListener('change', () => {
   state.currentPlayer = Number(els.currentPlayer.value);
   selected.clear();
-  render();
-});
-els.variantSpades.addEventListener('change', () => {
-  state.variantSpades = els.variantSpades.checked;
   render();
 });
 

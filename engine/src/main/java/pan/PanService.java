@@ -10,13 +10,17 @@ public class PanService {
     public Server.ResponseDto evaluate(Server.RequestDto request) {
         PanEvaluator panEvaluator = new PanEvaluator();
         PanEvaluator.MoveAndScore moveAndScore = panEvaluator.findBestMove(request.toPanState(), 6);
-        return toResponseDto(moveAndScore);
+        return toResponseDto(request, moveAndScore);
     }
 
-    private Server.ResponseDto toResponseDto(PanEvaluator.MoveAndScore moveAndScore) {
+    private Server.ResponseDto toResponseDto(Server.RequestDto request, PanEvaluator.MoveAndScore moveAndScore) {
         Server.ResponseDto response = new Server.ResponseDto();
         response.bestMove = serializeMove(moveAndScore.move());
-        response.score = moveAndScore.score();
+        int score = moveAndScore.score();
+        if (request.currentPlayer != 0) {
+            score = -score;
+        }
+        response.score = score;
         return response;
     }
 

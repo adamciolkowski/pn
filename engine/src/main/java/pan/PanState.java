@@ -96,6 +96,11 @@ public class PanState {
         return playersTurn ? player : opponent;
     }
 
+    /** True when {@code player} (UI player 0) is on move. */
+    public boolean isPlayersTurn() {
+        return playersTurn;
+    }
+
     public boolean isGameOver() {
         return opponent.isEmpty() || player.isEmpty();
     }

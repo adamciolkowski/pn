@@ -14,16 +14,21 @@ public class PanEvaluator {
     private int cacheMisses = 0;
 
     public MoveAndScore findBestMove(PanState board, int depth) {
-        int bestScore = Integer.MIN_VALUE;
+        boolean maximizing = board.isPlayersTurn();
+        int bestScore = maximizing ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         PanMove bestMove = null;
 
         List<PanMove> legalMoves = board.getLegalMoves();
         for (PanMove move : legalMoves) {
             PanState childBoard = board.move(move);
+            int score = evaluate(childBoard, depth - 1, childBoard.isPlayersTurn());
 
-            int score = evaluate(childBoard, depth - 1, false);
-
-            if (score > bestScore) {
+            if (maximizing) {
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            } else if (score < bestScore) {
                 bestScore = score;
                 bestMove = move;
             }
