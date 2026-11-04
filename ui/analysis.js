@@ -250,14 +250,7 @@ function render() {
 
 function onCardClick(playerIndex, card) {
   if (state.result) return;
-  if (playerIndex !== state.currentPlayer) {
-    els.actionHint.textContent = `Switch "On move" to P${playerIndex + 1} to play their cards (analysis mode).`;
-    els.currentPlayer.value = String(playerIndex);
-    state.currentPlayer = playerIndex;
-    selected.clear();
-    render();
-    return;
-  }
+  if (playerIndex !== state.currentPlayer) return;
 
   const legal = legalPlayIds(playerIndex);
   const id = cardId(card);
@@ -459,6 +452,11 @@ async function fetchEval(gameState) {
   }
 }
 
+function setEvalBar(p1Percent) {
+  const pct = Math.max(0, Math.min(100, p1Percent));
+  els.evalBar.style.width = `${pct}%`;
+}
+
 function displayEval(data) {
   if (!ensureEvalElements()) return;
 
@@ -466,7 +464,7 @@ function displayEval(data) {
     els.evalScoreLabel.hidden = false;
     els.evalScore.textContent = '—';
     els.evalScore.style.color = 'var(--text-muted)';
-    els.evalBar.style.marginLeft = '-25%';
+    setEvalBar(50);
     els.evalNote.textContent = data.note || 'Engine unreachable';
     return;
   }
@@ -475,7 +473,7 @@ function displayEval(data) {
     els.evalScoreLabel.hidden = false;
     els.evalScore.textContent = '-';
     els.evalScore.style.color = 'var(--text)';
-    els.evalBar.style.marginLeft = '0%';
+    setEvalBar(50);
     els.evalNote.textContent = data.note || 'Deal finished';
     return;
   }
@@ -500,10 +498,15 @@ function displayEval(data) {
     els.evalScore.style.color = score > 0 ? 'var(--p1)' : score < 0 ? 'var(--p2)' : 'var(--text)';
   }
 
-  const barUnit = decisive ? (winIn != null ? 1 : -1) : score / 100;
-  const pct = Math.max(0, Math.min(100, 50 + barUnit * 25));
-  els.evalBar.style.marginLeft = `${pct - 50}%`;
-  els.evalBar.style.width = '50%';
+  let p1Bar = 50;
+  if (winIn != null) {
+    p1Bar = 100;
+  } else if (loseIn != null) {
+    p1Bar = 0;
+  } else {
+    p1Bar = 50 + (score / 100) * 50;
+  }
+  setEvalBar(p1Bar);
 
   els.evalNote.textContent = data.note || '';
 }
@@ -538,11 +541,6 @@ function bindEvents() {
     els.stateJson.value = JSON.stringify(serializeState(state), null, 2);
   });
   els.preset.addEventListener('change', () => loadPreset(els.preset.value));
-  els.currentPlayer.addEventListener('change', () => {
-    state.currentPlayer = Number(els.currentPlayer.value);
-    selected.clear();
-    render();
-  });
   els.btnEditPosition?.addEventListener('click', () => {
     window.dispatchEvent(
       new CustomEvent('pan:navigate', {
@@ -559,7 +557,6 @@ function cacheElements() {
     stack: $('#stack', rootEl),
     p0Count: $('#p0-count', rootEl),
     p1Count: $('#p1-count', rootEl),
-    currentPlayer: $('#current-player', rootEl),
     btnPickup: $('#btn-pickup', rootEl),
     actionHint: $('#action-hint', rootEl),
     moveList: $('#move-list', rootEl),

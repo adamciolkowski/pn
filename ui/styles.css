@@ -690,7 +690,7 @@ body {
 
 .eval-bar-wrap {
   height: 8px;
-  background: var(--bg);
+  background: var(--p2);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 12px;
@@ -699,9 +699,9 @@ body {
 .eval-bar {
   height: 100%;
   width: 50%;
-  background: linear-gradient(90deg, var(--p2), #888 50%, var(--p1));
-  border-radius: 4px;
-  transition: margin-left 0.3s;
+  background: var(--p1);
+  border-radius: 4px 0 0 4px;
+  transition: width 0.3s ease;
 }
 
 .eval-note {
