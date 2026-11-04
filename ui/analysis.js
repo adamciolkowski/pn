@@ -479,7 +479,7 @@ function displayEval(data) {
   const score = Number(data.score);
   const winIn = data.winIn != null ? Number(data.winIn) : null;
   const loseIn = data.loseIn != null ? Number(data.loseIn) : null;
-  const forced = winIn != null || loseIn != null;
+  const decisive = winIn != null || loseIn != null;
 
   if (winIn != null) {
     els.evalScoreLabel.hidden = true;
@@ -496,7 +496,7 @@ function displayEval(data) {
     els.evalScore.style.color = score > 0 ? 'var(--p1)' : score < 0 ? 'var(--p2)' : 'var(--text)';
   }
 
-  const barUnit = forced ? (winIn != null ? 1 : -1) : score / 100;
+  const barUnit = decisive ? (winIn != null ? 1 : -1) : score / 100;
   const pct = Math.max(0, Math.min(100, 50 + barUnit * 25));
   els.evalBar.style.marginLeft = `${pct - 50}%`;
   els.evalBar.style.width = '50%';

@@ -8,22 +8,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PanServiceTest {
 
     @Test
-    void mateScoreBecomesPlyDistance() {
+    void winScoreBecomesTurnDistance() {
         Server.ResponseDto win = new Server.ResponseDto();
-        PanService.applyMateDistance(win, 105);
+        PanService.applyWinDistance(win, 105);
         assertThat(win.winIn).isEqualTo(1);
         assertThat(win.loseIn).isNull();
 
         Server.ResponseDto loss = new Server.ResponseDto();
-        PanService.applyMateDistance(loss, -104);
+        PanService.applyWinDistance(loss, -104);
         assertThat(loss.loseIn).isEqualTo(2);
         assertThat(loss.winIn).isNull();
     }
 
     @Test
-    void nonMateScoreHasNoDistance() {
+    void nonWinScoreHasNoTurnDistance() {
         Server.ResponseDto dto = new Server.ResponseDto();
-        PanService.applyMateDistance(dto, 0);
+        PanService.applyWinDistance(dto, 0);
         assertThat(dto.winIn).isNull();
         assertThat(dto.loseIn).isNull();
     }
