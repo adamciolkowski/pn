@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pan — Position Analysis</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>Pan</h1>
+      <span class="subtitle">Position analysis · 2 players</span>
+    </header>
+
+    <aside class="panel panel-left">
+      <section class="panel-section">
+        <h2>Evaluation</h2>
+        <div id="eval-status" class="eval-status eval-status--loading">Analyzing…</div>
+        <div id="eval-content" class="eval-content hidden">
+          <div class="eval-score-row">
+            <span class="eval-label">Score</span>
+            <span id="eval-score" class="eval-score">—</span>
+          </div>
+          <div class="eval-bar-wrap">
+            <div id="eval-bar" class="eval-bar"></div>
+          </div>
+          <div class="eval-mate-row">
+            <div class="eval-mate">
+              <span class="eval-label">Win in</span>
+              <span id="eval-win" class="eval-mate-value">—</span>
+            </div>
+            <div class="eval-mate">
+              <span class="eval-label">Lose in</span>
+              <span id="eval-lose" class="eval-mate-value">—</span>
+            </div>
+          </div>
+          <p id="eval-note" class="eval-note"></p>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <h2>Position</h2>
+        <label class="field">
+          <span>On move</span>
+          <select id="current-player">
+            <option value="0">Player 1</option>
+            <option value="1">Player 2</option>
+          </select>
+        </label>
+        <label class="field checkbox-field">
+          <input type="checkbox" id="variant-spades">
+          <span>Spades reverse variant</span>
+        </label>
+      </section>
+
+      <section class="panel-section">
+        <h2>History</h2>
+        <div id="move-list" class="move-list"></div>
+        <div class="btn-row">
+          <button type="button" id="btn-undo" class="btn btn-secondary" disabled>Undo</button>
+          <button type="button" id="btn-redo" class="btn btn-secondary" disabled>Redo</button>
+        </div>
+      </section>
+    </aside>
+
+    <main class="board">
+      <div class="player-area player-area--top" data-player="1">
+        <div class="player-header">
+          <span class="player-name">Player 2</span>
+          <span id="p1-count" class="card-count">0 cards</span>
+        </div>
+        <div id="hand-1" class="hand"></div>
+      </div>
+
+      <div class="stack-area">
+        <div id="stack" class="stack"></div>
+        <div class="stack-actions">
+          <button type="button" id="btn-pickup" class="btn btn-warning" disabled>Pick up from stack</button>
+        </div>
+        <p id="action-hint" class="action-hint"></p>
+      </div>
+
+      <div class="player-area player-area--bottom" data-player="0">
+        <div class="player-header">
+          <span class="player-name">Player 1</span>
+          <span id="p0-count" class="card-count">0 cards</span>
+        </div>
+        <div id="hand-0" class="hand"></div>
+      </div>
+    </main>
+
+    <aside class="panel panel-right">
+      <section class="panel-section">
+        <h2>Initial state</h2>
+        <label class="field">
+          <span>Preset</span>
+          <select id="preset">
+            <option value="standard">Standard deal (empty stack, 9♥ opener)</option>
+            <option value="midgame">Midgame example</option>
+            <option value="empty-stack">Custom (from JSON)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>State JSON</span>
+          <textarea id="state-json" rows="14" spellcheck="false"></textarea>
+        </label>
+        <button type="button" id="btn-apply-state" class="btn btn-primary btn-block">Apply state</button>
+        <button type="button" id="btn-export-state" class="btn btn-secondary btn-block">Export current</button>
+      </section>
+
+      <section class="panel-section">
+        <h2>Engine</h2>
+        <label class="field">
+          <span>Evaluate URL</span>
+          <input type="url" id="eval-url" value="/api/evaluate" placeholder="/api/evaluate">
+        </label>
+        <p class="help-text">POST JSON <code>{ "state": … }</code>. Shows fallback when unreachable.</p>
+      </section>
+
+      <section class="panel-section rules-summary">
+        <h2>Rules reminder</h2>
+        <ul>
+          <li>Play 1 card or 4 of a kind ≥ stack top (9 &lt; 10 &lt; J &lt; Q &lt; K &lt; A).</li>
+          <li>Can't play? Pick up 3 from stack (or all but 9♥ if ≤3 on stack).</li>
+          <li>Empty your hand to win the deal.</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
