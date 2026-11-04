@@ -479,18 +479,34 @@ function displayEval(data) {
   }
 
   const score = Number(data.score);
-  const scoreText = score > 0 ? `+${score.toFixed(2)}` : score.toFixed(2);
-  els.evalScore.textContent = scoreText;
-  els.evalScore.style.color = score > 0 ? 'var(--p1)' : score < 0 ? 'var(--p2)' : 'var(--text)';
+  const winIn = data.winIn != null ? Number(data.winIn) : null;
+  const loseIn = data.loseIn != null ? Number(data.loseIn) : null;
+  const forced = winIn != null || loseIn != null;
 
-  const barUnit = score / 100;
+  if (winIn != null) {
+    els.evalScore.textContent = `+#${winIn}`;
+    els.evalScore.style.color = 'var(--p1)';
+  } else if (loseIn != null) {
+    els.evalScore.textContent = `-#${loseIn}`;
+    els.evalScore.style.color = 'var(--p2)';
+  } else {
+    const scoreText = score > 0 ? `+${score.toFixed(2)}` : score.toFixed(2);
+    els.evalScore.textContent = scoreText;
+    els.evalScore.style.color = score > 0 ? 'var(--p1)' : score < 0 ? 'var(--p2)' : 'var(--text)';
+  }
+
+  const barUnit = forced ? (winIn != null ? 1 : -1) : score / 100;
   const pct = Math.max(0, Math.min(100, 50 + barUnit * 25));
   els.evalBar.style.marginLeft = `${pct - 50}%`;
   els.evalBar.style.width = '50%';
 
-  els.evalWin.textContent = data.winIn != null ? `${data.winIn} moves` : '—';
-  els.evalLose.textContent = data.loseIn != null ? `${data.loseIn} moves` : '—';
+  els.evalWin.textContent = winIn != null ? formatPlies(winIn) : '—';
+  els.evalLose.textContent = loseIn != null ? formatPlies(loseIn) : '—';
   els.evalNote.textContent = data.note || '';
+}
+
+function formatPlies(n) {
+  return n === 1 ? '1 ply' : `${n} plies`;
 }
 
 function scheduleEval() {

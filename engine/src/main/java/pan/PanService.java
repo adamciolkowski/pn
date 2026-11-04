@@ -7,9 +7,14 @@ import java.util.Map;
 
 public class PanService {
 
+    /** Must match the depth passed to {@link PanEvaluator#findBestMove}. */
+    static final int SEARCH_DEPTH = 6;
+    /** Terminal scores are {@code ±(MATE_SCORE + remaining depth)}. */
+    static final int MATE_SCORE = 100;
+
     public Server.ResponseDto evaluate(Server.RequestDto request) {
         PanEvaluator panEvaluator = new PanEvaluator();
-        PanEvaluator.MoveAndScore moveAndScore = panEvaluator.findBestMove(request.toPanState(), 6);
+        PanEvaluator.MoveAndScore moveAndScore = panEvaluator.findBestMove(request.toPanState(), SEARCH_DEPTH);
         return toResponseDto(request, moveAndScore);
     }
 
@@ -21,7 +26,17 @@ public class PanService {
             score = -score;
         }
         response.score = score;
+        applyMateDistance(response, score);
         return response;
+    }
+
+    /** Side-to-move mate distance, same conversion as engine tests ({@code 100 - score + depth}). */
+    static void applyMateDistance(Server.ResponseDto response, int score) {
+        if (score >= MATE_SCORE) {
+            response.winIn = MATE_SCORE - score + SEARCH_DEPTH;
+        } else if (score <= -MATE_SCORE) {
+            response.loseIn = MATE_SCORE + score + SEARCH_DEPTH;
+        }
     }
 
     static Object serializeMove(PanMove move) {

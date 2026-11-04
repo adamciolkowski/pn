@@ -212,6 +212,10 @@ public class Server {
     public static class ResponseDto {
         public int score;
         public Object bestMove;
+        /** Plies until the side to move forces a win, when the search proves it. */
+        public Integer winIn;
+        /** Plies until the side to move is lost, when the search proves it. */
+        public Integer loseIn;
 
         public ResponseDto() {
         }
