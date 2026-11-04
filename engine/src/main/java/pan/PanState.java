@@ -45,12 +45,19 @@ public class PanState {
 
     static void addSingleCardMoves(CardSet hand, Card onTopOfDeck, List<PanMove> moves) {
 //        int sameOrHigher = onTopOfDeck.rank().ordinal() * 4;
+        Card prev = null;
         for (Iterator<Card> it = hand.cards(); it.hasNext(); ) {
             Card card = it.next();
             if (card.rank().compareTo(onTopOfDeck.rank()) < 0) {
                 continue;
             }
+            if (prev != null) {
+                if (prev.rank() == card.rank()) {
+                    continue;
+                }
+            }
             moves.add(new PanMove.OneCard(card));
+            prev = card;
         }
     }
 
@@ -169,11 +176,6 @@ public class PanState {
 
     public List<Card> getPlayerCards() {
         return player.getCards();
-    }
-
-    long getId() {
-        long bits = (long) player.bits << Integer.SIZE;
-        return bits + opponent.bits;
     }
 
     @Override

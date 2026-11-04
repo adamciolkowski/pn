@@ -1,17 +1,10 @@
 package pan;
 
-import java.util.*;
+import java.util.List;
 
 public class PanEvaluator {
 
-    private static final int WIN_SCORE = 100;
-
-    private int evaluatedNodes = 0;
-    private int skippedDueToRepetition = 0;
-    private final Map<PanState, Integer> evaluatedStates = new HashMap<>();
-
-    private int cacheHits = 0;
-    private int cacheMisses = 0;
+    private long evaluatedNodes = 0;
 
     public MoveAndScore findBestMove(PanState board, int depth) {
         boolean maximizing = board.isPlayersTurn();
@@ -33,12 +26,9 @@ public class PanEvaluator {
                 bestMove = move;
             }
         }
-
+        System.out.println("evaluated nodes: " + evaluatedNodes);
         return new MoveAndScore(bestMove, bestScore);
     }
-    
-//    public int evaluate(PanState state, int depth, boolean isMaximizing) {
-//    }
 
     public int evaluate(PanState state, int depth, boolean isMaximizing) {
         return alfabeta(state, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, isMaximizing);
@@ -75,14 +65,9 @@ public class PanEvaluator {
     }
 
     public int alfabeta(PanState state, int depth, int alpha, int beta, boolean isMaximizing) {
-        evaluatedStates.put(state, depth);
         evaluatedNodes++;
         if (state.isGameOver()) {
             int score = 100 + depth;
-            // player won, isMaximizing=true   --> +
-            // player won, isMaximizing=false   --> -
-            // player lose, isMaximizing=true   -->
-            // player lose, isMaximizing=false   -->
             return state.hasWon() ? score : -score;
         }
         if (depth == 0) {
@@ -93,11 +78,6 @@ public class PanEvaluator {
             List<PanMove> moves = state.getLegalMoves();
             for (PanMove move : moves) {
                 PanState newState = state.move(move);
-                Integer contains = evaluatedStates.get(newState);
-                if (contains != null && contains == depth) {
-                    skippedDueToRepetition++;
-                    continue;
-                }
                 int score = alfabeta(newState, depth - 1, alpha, beta, false);
                 max = Math.max(max, score);
                 alpha = Math.max(alpha, score);
@@ -111,11 +91,6 @@ public class PanEvaluator {
             List<PanMove> moves = state.getLegalMoves();
             for (PanMove move : moves) {
                 PanState newState = state.move(move);
-                Integer contains = evaluatedStates.get(newState);
-                if (contains != null && contains == depth) {
-                    skippedDueToRepetition++;
-                    continue;
-                }
                 int score = alfabeta(newState, depth - 1, alpha, beta, true);
                 min = Math.min(min, score);
                 beta = Math.min(beta, score);
@@ -127,22 +102,9 @@ public class PanEvaluator {
         }
     }
 
-    public int getEvaluatedNodes() {
+    public long getEvaluatedNodes() {
         return evaluatedNodes;
     }
 
-    public int getCacheHits() {
-        return cacheHits;
-    }
-
-    public int getCacheMisses() {
-        return cacheMisses;
-    }
-
-    public int getSkippedDueToRepetition() {
-        return skippedDueToRepetition;
-    }
-
-    public record MoveAndScore(PanMove move, int score) {
-    }
+    public record MoveAndScore(PanMove move, int score) { }
 }

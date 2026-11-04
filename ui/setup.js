@@ -153,7 +153,17 @@ function renderEditorStack() {
   });
 }
 
+function applyNineHeartsSideToMove() {
+  const opener = playerWithNineHearts(editorState);
+  const lockOpener = editorState.stack.length === 0 && opener !== -1;
+  if (lockOpener) {
+    editorState.currentPlayer = opener;
+  }
+  els.sideToMove.disabled = lockOpener;
+}
+
 function updatePlayerHighlight() {
+  applyNineHeartsSideToMove();
   const pi = editorState.currentPlayer;
   els.areaP0.classList.toggle('setup-player--active', pi === 0);
   els.areaP1.classList.toggle('setup-player--active', pi === 1);
@@ -212,6 +222,7 @@ function bindEvents() {
   bindDropHandlers();
 
   els.sideToMove.addEventListener('change', () => {
+    if (els.sideToMove.disabled) return;
     editorState.currentPlayer = Number(els.sideToMove.value);
     updatePlayerHighlight();
   });

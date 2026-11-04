@@ -42,7 +42,6 @@ public class Main {
         System.out.println(score);
         System.out.println(evaluator.getEvaluatedNodes());
         System.out.println("took " + time + " ms");
-        System.out.println("skipped: " + evaluator.getSkippedDueToRepetition());
     }
 
     private static List<Card> allMinus(List<Card> hand, List<Card> stack) {
