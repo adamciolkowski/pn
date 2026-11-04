@@ -481,7 +481,6 @@ function displayEval(data) {
   const score = Number(data.score);
   const winIn = data.winIn != null ? Number(data.winIn) : null;
   const loseIn = data.loseIn != null ? Number(data.loseIn) : null;
-  const decisive = winIn != null || loseIn != null;
 
   if (winIn != null) {
     els.evalScoreLabel.hidden = true;
