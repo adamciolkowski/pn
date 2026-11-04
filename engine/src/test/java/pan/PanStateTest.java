@@ -120,8 +120,8 @@ class PanStateTest {
         );
 
         assertThat(state.getLegalMoves()).containsExactlyInAnyOrder(
-                new PanMove.OneCard(Card.of(Rank.QUEEN, Suit.SPADES)),
-                new PanMove.OneCard(Card.of(Rank.KING, Suit.CLUBS)),
+                new PanMove.OneCard(Card.of(Rank.QUEEN, Suit.HEARTS)),
+                new PanMove.OneCard(Card.of(Rank.KING, Suit.HEARTS)),
                 PanMove.Take.INSTANCE
         );
     }
@@ -208,11 +208,8 @@ class PanStateTest {
 
         PanState afterTake = state.move(PanMove.Take.INSTANCE);
 
-        assertThat(afterTake.getPlayerCards()).containsExactlyInAnyOrder(
-                Card.of(Rank.NINE, Suit.CLUBS),
-                Card.of(Rank.NINE, Suit.SPADES),
-                Card.of(Rank.TEN, Suit.DIAMONDS)
-        );
+        assertThat(afterTake.getPlayerCards().stream().map(Card::rank).toList())
+                .containsExactlyInAnyOrder(Rank.NINE, Rank.NINE, Rank.TEN);
     }
 
     @Test
@@ -237,12 +234,8 @@ class PanStateTest {
 
         PanState afterTake = state.move(PanMove.Take.INSTANCE);
 
-        assertThat(afterTake.getPlayerCards()).containsExactlyInAnyOrder(
-                Card.of(Rank.NINE, Suit.CLUBS),
-                Card.of(Rank.TEN, Suit.DIAMONDS),
-                Card.of(Rank.JACK, Suit.SPADES),
-                Card.of(Rank.JACK, Suit.HEARTS)
-        );
+        assertThat(afterTake.getPlayerCards().stream().map(Card::rank).toList())
+                .containsExactlyInAnyOrder(Rank.NINE, Rank.TEN, Rank.JACK, Rank.JACK);
     }
 
     private static List<Card> stack(Card... cards) {

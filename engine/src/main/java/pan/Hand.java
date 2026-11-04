@@ -5,13 +5,13 @@ import java.util.List;
 
 public class Hand {
 
-    private final CardSet cards;
+    private final RankCounts cards;
 
     public static Hand from(List<Card> cards) {
-        return new Hand(CardSet.from(cards));
+        return new Hand(RankCounts.from(cards));
     }
 
-    private Hand(CardSet cards) {
+    private Hand(RankCounts cards) {
         this.cards = cards;
     }
 
@@ -19,12 +19,20 @@ public class Hand {
         return cards.isEmpty();
     }
 
+    public Hand add(RankCounts more) {
+        return new Hand(cards.add(more));
+    }
+
     public Hand add(CardSet more) {
         return new Hand(cards.add(more));
     }
 
-    public Hand removeCard(Card card) {
-        return new Hand(cards.removeCard(card));
+    public Hand removeRank(Rank rank) {
+        return new Hand(cards.removeRank(rank));
+    }
+
+    public int count(Rank rank) {
+        return cards.count(rank);
     }
 
     public boolean hasFourNines() {
@@ -48,7 +56,7 @@ public class Hand {
     }
 
     CardSet cardSet() {
-        return cards;
+        return cards.toCardSet();
     }
 
     @Override

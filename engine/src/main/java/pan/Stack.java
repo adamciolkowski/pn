@@ -1,86 +1,89 @@
 package pan;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Stack {
 
-    private CardSet cards;
+    private Rank[] cards;
 
     public static Stack encode(List<Card> stack) {
-        return new Stack(CardSet.from(stack));
+        Rank[] ranks = new Rank[stack.size()];
+        for (int i = 0; i < stack.size(); i++) {
+            ranks[i] = stack.get(i).rank();
+        }
+        return new Stack(ranks);
     }
 
     public Stack copy() {
-        return new Stack(cards);
+        return new Stack(cards.clone());
     }
 
-    private Stack(CardSet cards) {
+    private Stack(Rank[] cards) {
         this.cards = cards;
     }
 
     public boolean isEmpty() {
-        return cards.isEmpty();
+        return cards.length == 0;
     }
 
     public int size() {
-        return cards.count();
+        return cards.length;
     }
 
-    public Stack addCard(Card card) {
-        return new Stack(cards.add(card));
+    public Stack addCard(Rank rank) {
+        Rank[] next = Arrays.copyOf(cards, cards.length + 1);
+        next[cards.length] = rank;
+        return new Stack(next);
     }
 
     public Stack addFourCards(Rank rank) {
-        return new Stack(cards.addFourCards(rank));
+        Rank[] next = Arrays.copyOf(cards, cards.length + 4);
+        Arrays.fill(next, cards.length, next.length, rank);
+        return new Stack(next);
     }
 
-    public Stack remove(CardSet taken) {
-        return new Stack(cards.remove(taken));
+    public Stack removeTop(int count) {
+        if (count == 0) {
+            return this;
+        }
+        return new Stack(Arrays.copyOf(cards, cards.length - count));
     }
 
     List<Card> decode() {
-        List<Card> decoded = new ArrayList<>();
-        int bits = cards.bits;
-        for (int i = 24 - 1; i >= 0; i--) {
-            if ((bits & (1 << i)) != 0) {
-                decoded.add(CardSet.cardFromIndex(i));
-            }
+        List<Card> decoded = new ArrayList<>(cards.length);
+        for (Rank rank : cards) {
+            decoded.add(RankCounts.canonicalCard(rank));
         }
         return decoded;
     }
 
-    Card peek() {
+    Rank peekRank() {
         assert !isEmpty();
-        int topCardIdx = bitIndexOfCardOnTop();
-        return CardSet.cardFromIndex(topCardIdx);
+        return cards[cards.length - 1];
     }
 
-    CardSet MUTABLE_popThree() {
-        int takenCount = 0;
-        CardSet takenCards = CardSet.empty();
+    Card peek() {
+        return RankCounts.canonicalCard(peekRank());
+    }
 
-        while (takenCount < 3 && size() > 1) {
-            CardSet card = MUTABLE_pop();
-            takenCards = takenCards.add(card);
-            takenCount++;
+    RankCounts MUTABLE_popThree() {
+        List<Rank> taken = new ArrayList<>();
+        while (taken.size() < 3 && size() > 1) {
+            taken.add(MUTABLE_popRank());
         }
-        return takenCards;
+        return RankCounts.fromRanks(taken);
     }
 
-    private CardSet MUTABLE_pop() {
-        int i = bitIndexOfCardOnTop();
-        CardSet card = new CardSet(1 << i);
-        cards = cards.remove(card);
-        return card;
-    }
-
-    private int bitIndexOfCardOnTop() {
-        return Integer.SIZE - 1 - Integer.numberOfLeadingZeros(cards.bits);
+    private Rank MUTABLE_popRank() {
+        Rank rank = cards[cards.length - 1];
+        cards = Arrays.copyOf(cards, cards.length - 1);
+        return rank;
     }
 
     CardSet cardSet() {
-        return cards;
+        return CardSet.from(decode());
     }
 
     @Override
@@ -88,16 +91,16 @@ public class Stack {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Stack stack = (Stack) o;
-        return cards.equals(stack.cards);
+        return Arrays.equals(cards, stack.cards);
     }
 
     @Override
     public int hashCode() {
-        return cards.hashCode();
+        return Arrays.hashCode(cards);
     }
 
     @Override
     public String toString() {
-        return cards.toString();
+        return decode().toString();
     }
 }

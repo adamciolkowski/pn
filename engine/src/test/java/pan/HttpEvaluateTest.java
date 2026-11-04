@@ -26,6 +26,6 @@ class HttpEvaluateTest {
 
         assertThat(response.score).isLessThan(0);
         assertThat(response.loseIn).isEqualTo(1);
-        assertThat(response.bestMove).isEqualTo(Map.of("type", "one", "card", "AS"));
+        assertThat(response.bestMove).isEqualTo(Map.of("type", "one", "card", "AH"));
     }
 }
