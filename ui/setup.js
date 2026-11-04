@@ -26,7 +26,7 @@ let bound = false;
 function placedIds() {
   const ids = new Set();
   for (const p of editorState.players) {
-    for (const c of p.hand) ids.add(cardId(c));
+    for (const c of p) ids.add(cardId(c));
   }
   for (const c of editorState.stack) ids.add(cardId(c));
   return ids;
@@ -35,7 +35,7 @@ function placedIds() {
 function moveCard(cardIdStr, from, to, stackIndex = null) {
   const card = parseCard(cardIdStr);
   if (from.zone === 'hand') {
-    const hand = editorState.players[from.player].hand;
+    const hand = editorState.players[from.player];
     const idx = hand.findIndex((c) => cardId(c) === cardIdStr);
     if (idx === -1) return;
     hand.splice(idx, 1);
@@ -52,8 +52,8 @@ function moveCard(cardIdStr, from, to, stackIndex = null) {
     return;
   }
   if (to.zone === 'hand') {
-    editorState.players[to.player].hand.push(card);
-    editorState.players[to.player].hand = sortHand(editorState.players[to.player].hand);
+    editorState.players[to.player].push(card);
+    editorState.players[to.player] = sortHand(editorState.players[to.player]);
   } else if (to.zone === 'stack') {
     const at = stackIndex == null ? editorState.stack.length : stackIndex;
     editorState.stack.splice(at, 0, card);
@@ -133,7 +133,7 @@ function renderPool() {
 
 function renderEditorHand(container, playerIndex) {
   container.innerHTML = '';
-  const hand = sortHand(editorState.players[playerIndex].hand);
+  const hand = sortHand(editorState.players[playerIndex]);
   for (const c of hand) {
     const el = renderCardElement(c, { draggable: true });
     attachCardDrag(el, c, { zone: 'hand', player: playerIndex });
@@ -161,7 +161,7 @@ function updatePlayerHighlight() {
 
 function updateSummary() {
   const placed = placedIds().size;
-  els.summary.textContent = `${placed} / 24 cards placed · P1: ${editorState.players[0].hand.length} · P2: ${editorState.players[1].hand.length} · Stack: ${editorState.stack.length}`;
+  els.summary.textContent = `${placed} / 24 cards placed · P1: ${editorState.players[0].length} · P2: ${editorState.players[1].length} · Stack: ${editorState.stack.length}`;
   els.setupStatus.textContent = '';
   els.setupStatus.className = 'setup-status';
 }

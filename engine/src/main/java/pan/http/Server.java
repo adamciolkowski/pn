@@ -151,16 +151,16 @@ public class Server {
     }
 
     public static class RequestDto {
-        public Player[] players;
+        public List<List<String>> players;
         public List<String> stack;
         public int currentPlayer;
 
         public PanState toPanState() {
-            if (players == null || players.length < 2) {
-                throw new IllegalArgumentException("Expected two players with hands");
+            if (players == null || players.size() < 2) {
+                throw new IllegalArgumentException("Expected two player hands");
             }
-            List<Card> first = toCards(players[0].hand);
-            List<Card> second = toCards(players[1].hand);
+            List<Card> first = toCards(players.get(0));
+            List<Card> second = toCards(players.get(1));
             List<Card> pile = toCards(stack != null ? stack : List.of());
             return new PanState(first, second, pile, currentPlayer == 0);
         }
@@ -201,11 +201,6 @@ public class Server {
                 case 'S' -> Suit.SPADES;
                 default -> throw new IllegalArgumentException("Invalid card: " + str);
             };
-        }
-
-        public static class Player {
-            public List<String> hand;
-
         }
     }
 

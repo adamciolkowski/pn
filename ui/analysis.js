@@ -119,7 +119,7 @@ function renderHand(container, playerIndex) {
   const isActive = state.currentPlayer === playerIndex;
   const legal = isActive ? legalPlayIds(playerIndex) : new Set();
 
-  const hand = sortHand(state.players[playerIndex].hand);
+  const hand = sortHand(state.players[playerIndex]);
   for (const c of hand) {
     const id = cardId(c);
     const playable = isActive && legal.has(id);
@@ -237,8 +237,8 @@ function render() {
   renderHand(els.hand1, 1);
   renderStack();
 
-  els.p0Count.textContent = `${state.players[0].hand.length} cards`;
-  els.p1Count.textContent = `${state.players[1].hand.length} cards`;
+  els.p0Count.textContent = `${state.players[0].length} cards`;
+  els.p1Count.textContent = `${state.players[1].length} cards`;
 
   els.btnUndo.disabled = historyIndex <= 0;
   els.btnRedo.disabled = historyIndex >= history.length - 1;

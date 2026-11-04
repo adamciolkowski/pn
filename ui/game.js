@@ -6,8 +6,7 @@ export const SUIT_SYMBOL = { H: '♥', D: '♦', C: '♣', S: '♠' };
 export const RANK_VALUE = { '9': 0, '10': 1, J: 2, Q: 3, K: 4, A: 5 };
 
 /** @typedef {{ rank: string, suit: string }} Card */
-/** @typedef {{ hand: Card[] }} Player */
-/** @typedef {{ players: Player[], stack: Card[], currentPlayer: number }} GameState */
+/** @typedef {{ players: Card[][], stack: Card[], currentPlayer: number }} GameState */
 
 export function cardId(c) {
   return `${c.rank}${c.suit}`;
@@ -51,7 +50,7 @@ export function standardDeal(seedOrdered = false) {
   const p1 = deck.filter((_, i) => i % 2 === 1);
   const opener = p0.some((c) => cardId(c) === '9H') ? 0 : 1;
   return {
-    players: [{ hand: sortHand(p0) }, { hand: sortHand(p1) }],
+    players: [sortHand(p0), sortHand(p1)],
     stack: [],
     currentPlayer: opener,
   };
@@ -60,8 +59,8 @@ export function standardDeal(seedOrdered = false) {
 export function midgameExample() {
   return {
     players: [
-      { hand: sortHand(parseCards(['AH', 'KD', 'QC', '10S', '9D'])) },
-      { hand: sortHand(parseCards(['AS', 'JH', '10H', '9C', '9S', '10C', 'JC'])) },
+      sortHand(parseCards(['AH', 'KD', 'QC', '10S', '9D'])),
+      sortHand(parseCards(['AS', 'JH', '10H', '9C', '9S', '10C', 'JC'])),
     ],
     stack: parseCards(['9H', '10D', 'JS', 'QS']),
     currentPlayer: 1,
@@ -83,7 +82,7 @@ export function isOpening(state) {
 /** Player who holds 9♥ (opener at start of deal). */
 export function playerWithNineHearts(state) {
   for (let i = 0; i < state.players.length; i++) {
-    if (state.players[i].hand.some((c) => cardId(c) === '9H')) {
+    if (state.players[i].some((c) => cardId(c) === '9H')) {
       return i;
     }
   }
@@ -115,15 +114,15 @@ function groupByRank(hand) {
 export function legalSinglePlays(state, playerIndex) {
   if (isOpening(state)) {
     if (playerIndex !== playerWithNineHearts(state)) return [];
-    return state.players[playerIndex].hand.filter((c) => cardId(c) === '9H');
+    return state.players[playerIndex].filter((c) => cardId(c) === '9H');
   }
   const min = minPlayableRank(state);
-  return state.players[playerIndex].hand.filter((c) => RANK_VALUE[c.rank] >= min);
+  return state.players[playerIndex].filter((c) => RANK_VALUE[c.rank] >= min);
 }
 
 /** Legal four-of-a-kind plays (exactly 4 cards same rank). */
 export function legalQuadPlays(state, playerIndex) {
-  const groups = groupByRank(state.players[playerIndex].hand);
+  const groups = groupByRank(state.players[playerIndex]);
   const plays = [];
   if (isOpening(state)) {
     if (playerIndex !== playerWithNineHearts(state)) return [];
@@ -143,7 +142,7 @@ export function legalQuadPlays(state, playerIndex) {
 /** Special: three 9s when stack is only 9♥. */
 export function legalThreeNines(state, playerIndex) {
   if (!isNineHeartsOnlyStack(state)) return null;
-  const nines = state.players[playerIndex].hand.filter((c) => c.rank === '9' && c.suit !== 'H');
+  const nines = state.players[playerIndex].filter((c) => c.rank === '9' && c.suit !== 'H');
   if (nines.length === 3) return nines;
   return null;
 }
@@ -178,7 +177,7 @@ export function cardsMatchSelection(hand, selectedIds) {
 }
 
 export function validatePlay(state, playerIndex, selectedCards) {
-  const hand = state.players[playerIndex].hand;
+  const hand = state.players[playerIndex];
   const ids = selectedCards.map(cardId);
   if (!cardsMatchSelection(hand, ids)) {
     return { ok: false, reason: 'Selected cards not in hand' };
@@ -261,9 +260,9 @@ export function applyPlay(state, selectedCards) {
   if (!v.ok) throw new Error(v.reason);
 
   const ordered = orderPlayOnStack(selectedCards, v.type);
-  const newHand = sortHand(removeCardsFromHand(state.players[pi].hand, selectedCards));
-  const players = state.players.map((p, i) =>
-    i === pi ? { ...p, hand: newHand } : { ...p }
+  const newHand = sortHand(removeCardsFromHand(state.players[pi], selectedCards));
+  const players = state.players.map((hand, i) =>
+    i === pi ? newHand : hand
   );
   const newStack = [...state.stack, ...ordered];
 
@@ -287,7 +286,7 @@ export function applyPickup(state) {
   if (!taken.length) {
     throw new Error('Nothing to pick up from the stack');
   }
-  const newHand = sortHand([...state.players[pi].hand, ...taken]);
+  const newHand = sortHand([...state.players[pi], ...taken]);
   let newStack = state.stack;
   if (taken.length) {
     if (state.stack.length <= 3) {
@@ -296,8 +295,8 @@ export function applyPickup(state) {
       newStack = state.stack.slice(0, -3);
     }
   }
-  const players = state.players.map((p, i) =>
-    i === pi ? { ...p, hand: newHand } : { ...p }
+  const players = state.players.map((hand, i) =>
+    i === pi ? newHand : hand
   );
   return {
     state: {
@@ -316,14 +315,14 @@ function countAces(hand) {
 
 /** Check deal end: one player emptied hand. */
 export function resolveDealEnd(state, lastPlayerWhoPlayed) {
-  const empty = state.players.findIndex((p) => p.hand.length === 0);
+  const empty = state.players.findIndex((hand) => hand.length === 0);
   if (empty === -1) return state;
 
-  const loser = state.players.findIndex((p) => p.hand.length > 0);
+  const loser = state.players.findIndex((hand) => hand.length > 0);
   if (loser === -1) return state;
 
-  const winnerHand = state.players[empty].hand;
-  const loserHand = state.players[loser].hand;
+  const winnerHand = state.players[empty];
+  const loserHand = state.players[loser];
 
   // Draw: last player could play all remaining (1 or 4 aces) on their turn
   if (
@@ -350,17 +349,23 @@ export function cloneState(state) {
 /** Empty position for the setup editor (all cards start in the pool). */
 export function emptySetupState() {
   return {
-    players: [{ hand: [] }, { hand: [] }],
+    players: [[], []],
     stack: [],
     currentPlayer: 0,
   };
 }
 
+function parsePlayerWire(entry) {
+  const ids = Array.isArray(entry) ? entry : entry?.hand;
+  if (!Array.isArray(ids)) {
+    throw new Error('Invalid player hand');
+  }
+  return sortHand(parseCards(ids));
+}
+
 export function serializeState(state) {
   return {
-    players: state.players.map((p) => ({
-      hand: sortHand(p.hand).map(cardId),
-    })),
+    players: state.players.map((hand) => sortHand(hand).map(cardId)),
     stack: state.stack.map(cardId),
     currentPlayer: state.currentPlayer,
     ...(state.result ? { result: state.result } : {}),
@@ -370,9 +375,7 @@ export function serializeState(state) {
 
 export function deserializeState(obj) {
   const state = {
-    players: obj.players.map((p) => ({
-      hand: sortHand(parseCards(p.hand)),
-    })),
+    players: obj.players.map((entry) => parsePlayerWire(entry)),
     stack: parseCards(obj.stack ?? []),
     currentPlayer: obj.currentPlayer ?? 0,
   };
