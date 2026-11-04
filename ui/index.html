@@ -7,106 +7,182 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="app">
-    <header class="header">
+  <header class="header header--global">
+    <div class="header-brand">
       <h1>Pan</h1>
-      <span class="subtitle">Position analysis · 2 players</span>
-    </header>
+      <span class="subtitle">2-player Kurnik analysis</span>
+    </div>
+    <nav class="nav-tabs" aria-label="Views">
+      <a href="#/setup" id="nav-setup" class="nav-link nav-link--active">Setup</a>
+      <a href="#/analysis" id="nav-analysis" class="nav-link">Analysis</a>
+    </nav>
+  </header>
 
-    <aside class="panel panel-left">
-      <section class="panel-section">
-        <h2>Evaluation</h2>
-        <div id="eval-status" class="eval-status eval-status--loading">Analyzing…</div>
-        <div id="eval-content" class="eval-content hidden">
-          <div class="eval-score-row">
-            <span class="eval-label">Score</span>
-            <span id="eval-score" class="eval-score">—</span>
-          </div>
-          <div class="eval-bar-wrap">
-            <div id="eval-bar" class="eval-bar"></div>
-          </div>
-          <div class="eval-mate-row">
-            <div class="eval-mate">
-              <span class="eval-label">Win in</span>
-              <span id="eval-win" class="eval-mate-value">—</span>
-            </div>
-            <div class="eval-mate">
-              <span class="eval-label">Lose in</span>
-              <span id="eval-lose" class="eval-mate-value">—</span>
-            </div>
-          </div>
-          <p id="eval-note" class="eval-note"></p>
-        </div>
-      </section>
-
+  <div id="view-setup" class="view setup-view">
+    <aside class="setup-panel">
       <section class="panel-section">
         <h2>Position</h2>
+        <p id="setup-summary" class="setup-summary">0 / 24 cards placed</p>
         <label class="field">
-          <span>On move</span>
-          <select id="current-player">
+          <span>Side to move</span>
+          <select id="setup-side-to-move">
             <option value="0">Player 1</option>
             <option value="1">Player 2</option>
           </select>
         </label>
+        <p id="setup-status" class="setup-status" role="status"></p>
+        <button type="button" id="setup-analyze" class="btn btn-primary btn-block">Analyze</button>
       </section>
 
       <section class="panel-section">
-        <h2>History</h2>
-        <div id="move-list" class="move-list"></div>
-        <div class="btn-row">
-          <button type="button" id="btn-undo" class="btn btn-secondary" disabled>Undo</button>
-          <button type="button" id="btn-redo" class="btn btn-secondary" disabled>Redo</button>
-        </div>
+        <h2>Presets</h2>
+        <button type="button" id="setup-preset-standard" class="btn btn-secondary btn-block">Standard deal</button>
+        <button type="button" id="setup-preset-midgame" class="btn btn-secondary btn-block">Midgame example</button>
+        <button type="button" id="setup-clear" class="btn btn-ghost btn-block">Clear board</button>
+      </section>
+
+      <section class="panel-section rules-summary">
+        <h2>How to edit</h2>
+        <ul>
+          <li>Drag cards from the pool onto hands or stack.</li>
+          <li>Stack order is left (bottom) → right (top).</li>
+          <li>Drag back to the pool to remove a card.</li>
+        </ul>
       </section>
     </aside>
 
-    <main class="board">
-      <div class="player-area player-area--top" data-player="1">
-        <div class="player-header">
+    <main class="setup-board">
+      <div id="setup-area-1" class="setup-player setup-player--top" data-player="1">
+        <div class="setup-player-header">
           <span class="player-name">Player 2</span>
-          <span id="p1-count" class="card-count">0 cards</span>
+          <span class="setup-drop-hint">Drop cards here</span>
         </div>
-        <div id="hand-1" class="hand"></div>
+        <div id="setup-hand-1" class="hand drop-zone"></div>
       </div>
 
-      <div class="stack-area">
-        <div id="stack" class="stack"></div>
-        <div class="stack-actions">
-          <button type="button" id="btn-pickup" class="btn btn-warning" disabled>Pick up from stack</button>
+      <div class="setup-stack-block">
+        <span class="stack-label">Stack <span class="stack-hint">· bottom → top</span></span>
+        <div id="setup-stack-pad" class="setup-stack-pad drop-zone">
+          <div id="setup-stack" class="setup-stack-strip"></div>
         </div>
-        <p id="action-hint" class="action-hint"></p>
       </div>
 
-      <div class="player-area player-area--bottom" data-player="0">
-        <div class="player-header">
+      <div id="setup-area-0" class="setup-player setup-player--bottom setup-player--active" data-player="0">
+        <div class="setup-player-header">
           <span class="player-name">Player 1</span>
-          <span id="p0-count" class="card-count">0 cards</span>
+          <span class="setup-drop-hint">Drop cards here</span>
         </div>
-        <div id="hand-0" class="hand"></div>
+        <div id="setup-hand-0" class="hand drop-zone"></div>
       </div>
-    </main>
 
-    <aside class="panel panel-right">
-      <section class="panel-section">
-        <h2>Initial state</h2>
-        <label class="field">
-          <span>Preset</span>
-          <select id="preset">
-            <option value="standard">Standard deal (empty stack, 9♥ opener)</option>
-            <option value="midgame">Midgame example</option>
-            <option value="empty-stack">Custom (from JSON)</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>State JSON</span>
-          <textarea id="state-json" rows="14" spellcheck="false"></textarea>
-        </label>
-        <button type="button" id="btn-apply-state" class="btn btn-primary btn-block">Apply state</button>
-        <button type="button" id="btn-export-state" class="btn btn-secondary btn-block">Export current</button>
+      <section class="setup-pool-section">
+        <div class="setup-pool-header">
+          <span class="stack-label">Card pool</span>
+          <span id="setup-pool-count" class="card-count">24 in pool</span>
+        </div>
+        <div id="setup-pool" class="setup-pool drop-zone"></div>
       </section>
-    </aside>
+    </main>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <div id="view-analysis" class="view analysis-view" hidden>
+    <div class="app">
+      <aside class="panel panel-left">
+        <section class="panel-section">
+          <h2>Evaluation</h2>
+          <div id="eval-status" class="eval-status eval-status--loading">Analyzing…</div>
+          <div id="eval-content" class="eval-content hidden">
+            <div class="eval-score-row">
+              <span class="eval-label">Score</span>
+              <span id="eval-score" class="eval-score">—</span>
+            </div>
+            <div class="eval-bar-wrap">
+              <div id="eval-bar" class="eval-bar"></div>
+            </div>
+            <div class="eval-mate-row">
+              <div class="eval-mate">
+                <span class="eval-label">Win in</span>
+                <span id="eval-win" class="eval-mate-value">—</span>
+              </div>
+              <div class="eval-mate">
+                <span class="eval-label">Lose in</span>
+                <span id="eval-lose" class="eval-mate-value">—</span>
+              </div>
+            </div>
+            <p id="eval-note" class="eval-note"></p>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <h2>Position</h2>
+          <label class="field">
+            <span>On move</span>
+            <select id="current-player">
+              <option value="0">Player 1</option>
+              <option value="1">Player 2</option>
+            </select>
+          </label>
+          <button type="button" id="btn-edit-position" class="btn btn-secondary btn-block">Edit position…</button>
+        </section>
+
+        <section class="panel-section">
+          <h2>History</h2>
+          <div id="move-list" class="move-list"></div>
+          <div class="btn-row">
+            <button type="button" id="btn-undo" class="btn btn-secondary" disabled>Undo</button>
+            <button type="button" id="btn-redo" class="btn btn-secondary" disabled>Redo</button>
+          </div>
+        </section>
+      </aside>
+
+      <main class="board">
+        <div class="player-area player-area--top" data-player="1">
+          <div class="player-header">
+            <span class="player-name">Player 2</span>
+            <span id="p1-count" class="card-count">0 cards</span>
+          </div>
+          <div id="hand-1" class="hand"></div>
+        </div>
+
+        <div class="stack-area">
+          <div id="stack" class="stack"></div>
+          <div class="stack-actions">
+            <button type="button" id="btn-pickup" class="btn btn-warning" disabled>Pick up from stack</button>
+          </div>
+          <p id="action-hint" class="action-hint"></p>
+        </div>
+
+        <div class="player-area player-area--bottom" data-player="0">
+          <div class="player-header">
+            <span class="player-name">Player 1</span>
+            <span id="p0-count" class="card-count">0 cards</span>
+          </div>
+          <div id="hand-0" class="hand"></div>
+        </div>
+      </main>
+
+      <aside class="panel panel-right">
+        <section class="panel-section">
+          <h2>State JSON</h2>
+          <label class="field">
+            <span>Preset</span>
+            <select id="preset">
+              <option value="standard">Standard deal (empty stack, 9♥ opener)</option>
+              <option value="midgame">Midgame example</option>
+              <option value="empty-stack">Custom (from JSON)</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>State JSON</span>
+            <textarea id="state-json" rows="14" spellcheck="false"></textarea>
+          </label>
+          <button type="button" id="btn-apply-state" class="btn btn-primary btn-block">Apply state</button>
+          <button type="button" id="btn-export-state" class="btn btn-secondary btn-block">Export current</button>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
 </body>
 </html>

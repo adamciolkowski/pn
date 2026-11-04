@@ -347,6 +347,15 @@ export function cloneState(state) {
   return JSON.parse(JSON.stringify(state));
 }
 
+/** Empty position for the setup editor (all cards start in the pool). */
+export function emptySetupState() {
+  return {
+    players: [{ hand: [] }, { hand: [] }],
+    stack: [],
+    currentPlayer: 0,
+  };
+}
+
 export function serializeState(state) {
   return {
     players: state.players.map((p) => ({

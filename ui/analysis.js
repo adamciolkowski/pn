@@ -16,45 +16,40 @@ import {
   sortHand,
   isOpening,
   playerWithNineHearts,
-  formatCard,
   formatMove,
   cloneState,
 } from './game.js';
+import { renderCardElement } from './card-ui.js';
 
-const EVALUATE_URL = 'http://localhost:8080/api/evaluate';
+/** POST target when UI is served separately (e.g. python on 8765). Same-origin on :8080. */
+function resolveEvaluateUrl() {
+  const stored = localStorage.getItem('pan.engineUrl')?.trim();
+  if (stored) {
+    const base = stored.replace(/\/$/, '');
+    return base.endsWith('/api/evaluate') ? base : `${base}/api/evaluate`;
+  }
 
-const $ = (sel) => document.querySelector(sel);
+  if (location.port === '8080') return '/api/evaluate';
 
+  const host = location.hostname === '127.0.0.1' ? 'localhost' : location.hostname;
+  return `${location.protocol}//${host}:8080/api/evaluate`;
+}
+
+const EVALUATE_URL = resolveEvaluateUrl();
+
+const $ = (sel, root) => root.querySelector(sel);
+
+let rootEl;
 let state = standardDeal();
 let history = [cloneState(state)];
 let historyIndex = 0;
 let selected = new Set();
 let evalDebounce = null;
+let els = {};
 
-const els = {
-  hand0: $('#hand-0'),
-  hand1: $('#hand-1'),
-  stack: $('#stack'),
-  p0Count: $('#p0-count'),
-  p1Count: $('#p1-count'),
-  currentPlayer: $('#current-player'),
-  btnPickup: $('#btn-pickup'),
-  actionHint: $('#action-hint'),
-  moveList: $('#move-list'),
-  btnUndo: $('#btn-undo'),
-  btnRedo: $('#btn-redo'),
-  stateJson: $('#state-json'),
-  preset: $('#preset'),
-  btnApply: $('#btn-apply-state'),
-  btnExport: $('#btn-export-state'),
-  evalStatus: $('#eval-status'),
-  evalContent: $('#eval-content'),
-  evalScore: $('#eval-score'),
-  evalBar: $('#eval-bar'),
-  evalWin: $('#eval-win'),
-  evalLose: $('#eval-lose'),
-  evalNote: $('#eval-note'),
-};
+function renderCard(c, opts = {}) {
+  return renderCardElement(c, opts);
+}
 
 function pushHistory(newState) {
   history = history.slice(0, historyIndex + 1);
@@ -69,19 +64,6 @@ function goToHistory(index) {
   render();
 }
 
-function renderCard(c, opts = {}) {
-  const el = document.createElement('div');
-  const red = c.suit === 'H' || c.suit === 'D';
-  el.className = `card ${red ? 'card--red' : 'card--black'}`;
-  el.dataset.id = cardId(c);
-  if (opts.selected) el.classList.add('card--selected');
-  if (opts.legal) el.classList.add('card--legal');
-  if (opts.illegal) el.classList.add('card--illegal');
-  if (opts.stack) el.classList.add('card--stack');
-  el.innerHTML = `<span class="rank">${c.rank}</span><span class="suit">${{ H: '♥', D: '♦', C: '♣', S: '♠' }[c.suit]}</span>`;
-  return el;
-}
-
 function legalPlayIds(playerIndex) {
   const ids = new Set();
   for (const c of legalSinglePlays(state, playerIndex)) ids.add(cardId(c));
@@ -93,39 +75,38 @@ function legalPlayIds(playerIndex) {
   return ids;
 }
 
-function legalQuadIncludingCard(state, playerIndex, card) {
+function legalQuadIncludingCard(st, playerIndex, card) {
   const id = cardId(card);
-  return legalQuadPlays(state, playerIndex).find((quad) =>
+  return legalQuadPlays(st, playerIndex).find((quad) =>
     quad.some((c) => cardId(c) === id)
   );
 }
 
-function cardUsesMultiSelect(state, playerIndex, card) {
-  if (legalQuadIncludingCard(state, playerIndex, card)) return true;
-  const three = legalThreeNines(state, playerIndex);
+function cardUsesMultiSelect(st, playerIndex, card) {
+  if (legalQuadIncludingCard(st, playerIndex, card)) return true;
+  const three = legalThreeNines(st, playerIndex);
   return three?.some((c) => cardId(c) === cardId(card)) ?? false;
 }
 
-/** Card ids that must be selected together (4 of a rank, or 3 nines with only 9♥ on stack). */
-function multiSelectTargetIds(state, playerIndex, anchorCard) {
-  const quad = legalQuadIncludingCard(state, playerIndex, anchorCard);
+function multiSelectTargetIds(st, playerIndex, anchorCard) {
+  const quad = legalQuadIncludingCard(st, playerIndex, anchorCard);
   if (quad) return new Set(quad.map(cardId));
-  const three = legalThreeNines(state, playerIndex);
+  const three = legalThreeNines(st, playerIndex);
   if (three?.some((c) => cardId(c) === cardId(anchorCard))) {
     return new Set(three.map(cardId));
   }
   return new Set();
 }
 
-function isCompleteMultiSelection(state, playerIndex, selectedSet) {
+function isCompleteMultiSelection(st, playerIndex, selectedSet) {
   if (selectedSet.size === 0) return false;
   const anchor = parseCard([...selectedSet][0]);
-  const target = multiSelectTargetIds(state, playerIndex, anchor);
+  const target = multiSelectTargetIds(st, playerIndex, anchor);
   if (selectedSet.size !== target.size || target.size < 2) return false;
   for (const sid of selectedSet) {
     if (!target.has(sid)) return false;
   }
-  return validatePlay(state, playerIndex, [...selectedSet].map(parseCard)).ok;
+  return validatePlay(st, playerIndex, [...selectedSet].map(parseCard)).ok;
 }
 
 function renderHand(container, playerIndex) {
@@ -155,11 +136,11 @@ function renderStack() {
   const cards = state.stack;
   const n = cards.length;
   const hiddenBelow = Math.max(0, n - VISIBLE_STACK_CARDS);
-  const root = document.documentElement;
+  const docRoot = document.documentElement;
   const spread =
-    Number.parseFloat(getComputedStyle(root).getPropertyValue('--stack-spread')) || 36;
+    Number.parseFloat(getComputedStyle(docRoot).getPropertyValue('--stack-spread')) || 36;
   const underSpread =
-    Number.parseFloat(getComputedStyle(root).getPropertyValue('--stack-under-spread')) || 8;
+    Number.parseFloat(getComputedStyle(docRoot).getPropertyValue('--stack-under-spread')) || 8;
 
   const faceCards = cards.slice(-VISIBLE_STACK_CARDS);
   const narrowCount = hiddenBelow > 0 ? STACK_UNDER_INDICATOR : 0;
@@ -181,7 +162,7 @@ function renderStack() {
   });
 
   els.stack.dataset.hiddenCount = String(hiddenBelow);
-  const cardW = Number.parseFloat(getComputedStyle(root).getPropertyValue('--card-w')) || 52;
+  const cardW = Number.parseFloat(getComputedStyle(docRoot).getPropertyValue('--card-w')) || 52;
   let totalW = 0;
   if (n > 0) {
     totalW = faceStartX + cardW + (faceCards.length - 1) * spread;
@@ -193,7 +174,6 @@ function renderMoveList() {
   els.moveList.innerHTML = '';
   const moves = [];
   for (let i = 1; i < history.length; i++) {
-    const prev = history[i - 1];
     const curr = history[i];
     if (curr._move) moves.push({ index: i, move: curr._move });
   }
@@ -243,7 +223,7 @@ function updateActionButtons() {
 }
 
 function render() {
-  document.querySelectorAll('.player-area').forEach((area) => {
+  rootEl.querySelectorAll('.player-area').forEach((area) => {
     const p = Number(area.dataset.player);
     area.classList.toggle('player-area--active', state.currentPlayer === p && !state.result);
   });
@@ -379,7 +359,6 @@ function loadPreset(name) {
   render();
 }
 
-/** Wire format for pan.http.Server RequestDto (players, stack, currentPlayer). */
 function buildEvaluateRequest(gameState) {
   const s = serializeState(gameState);
   return {
@@ -403,7 +382,11 @@ function formatEngineBestMove(move) {
   if (move == null) return '';
   if (typeof move === 'string') return move;
   if (move.type === 'one' && move.card) {
-    return formatCard(parseCard(move.card));
+    try {
+      return formatCard(parseCard(move.card));
+    } catch {
+      return move.card;
+    }
   }
   if (move.type === 'four' && move.rank) {
     return `Four ${move.rank}s`;
@@ -411,21 +394,7 @@ function formatEngineBestMove(move) {
   if (move.type === 'pickup') {
     return 'Pick up from stack';
   }
-  if (move.card != null) {
-    const c = move.card;
-    if (typeof c === 'string') return c;
-    const rank = ENGINE_RANK[c.rank] ?? c.rank;
-    const suit = ENGINE_SUIT[c.suit] ?? c.suit;
-    if (rank && suit && typeof suit === 'string' && suit.length === 1) {
-      return formatCard({ rank, suit });
-    }
-    return `${rank}${suit}`;
-  }
-  if (move.rank != null) {
-    const rank = ENGINE_RANK[move.rank] ?? move.rank;
-    return `Four ${rank}s`;
-  }
-  return 'Pick up from stack';
+  return '';
 }
 
 async function fetchEval(gameState) {
@@ -504,19 +473,81 @@ function scheduleEval() {
   }, 280);
 }
 
-els.btnPickup.addEventListener('click', doPickup);
-els.btnUndo.addEventListener('click', () => goToHistory(historyIndex - 1));
-els.btnRedo.addEventListener('click', () => goToHistory(historyIndex + 1));
-els.btnApply.addEventListener('click', applyStateFromJson);
-els.btnExport.addEventListener('click', () => {
-  els.stateJson.value = JSON.stringify(serializeState(state), null, 2);
-});
-els.preset.addEventListener('change', () => loadPreset(els.preset.value));
-els.currentPlayer.addEventListener('change', () => {
-  state.currentPlayer = Number(els.currentPlayer.value);
-  selected.clear();
-  render();
-});
+let bound = false;
 
-els.stateJson.value = JSON.stringify(serializeState(state), null, 2);
-render();
+function bindEvents() {
+  if (bound) return;
+  bound = true;
+
+  els.btnPickup.addEventListener('click', doPickup);
+  els.btnUndo.addEventListener('click', () => goToHistory(historyIndex - 1));
+  els.btnRedo.addEventListener('click', () => goToHistory(historyIndex + 1));
+  els.btnApply.addEventListener('click', applyStateFromJson);
+  els.btnExport.addEventListener('click', () => {
+    els.stateJson.value = JSON.stringify(serializeState(state), null, 2);
+  });
+  els.preset.addEventListener('change', () => loadPreset(els.preset.value));
+  els.currentPlayer.addEventListener('change', () => {
+    state.currentPlayer = Number(els.currentPlayer.value);
+    selected.clear();
+    render();
+  });
+  els.btnEditPosition?.addEventListener('click', () => {
+    window.dispatchEvent(
+      new CustomEvent('pan:navigate', {
+        detail: { view: 'setup', state: cloneState(state) },
+      })
+    );
+  });
+}
+
+function cacheElements() {
+  els = {
+    hand0: $('#hand-0', rootEl),
+    hand1: $('#hand-1', rootEl),
+    stack: $('#stack', rootEl),
+    p0Count: $('#p0-count', rootEl),
+    p1Count: $('#p1-count', rootEl),
+    currentPlayer: $('#current-player', rootEl),
+    btnPickup: $('#btn-pickup', rootEl),
+    actionHint: $('#action-hint', rootEl),
+    moveList: $('#move-list', rootEl),
+    btnUndo: $('#btn-undo', rootEl),
+    btnRedo: $('#btn-redo', rootEl),
+    stateJson: $('#state-json', rootEl),
+    preset: $('#preset', rootEl),
+    btnApply: $('#btn-apply-state', rootEl),
+    btnExport: $('#btn-export-state', rootEl),
+    btnEditPosition: $('#btn-edit-position', rootEl),
+    evalStatus: $('#eval-status', rootEl),
+    evalContent: $('#eval-content', rootEl),
+    evalScore: $('#eval-score', rootEl),
+    evalBar: $('#eval-bar', rootEl),
+    evalWin: $('#eval-win', rootEl),
+    evalLose: $('#eval-lose', rootEl),
+    evalNote: $('#eval-note', rootEl),
+  };
+}
+
+/** Load a position and show the analysis board. */
+export function startAnalysis(initialState) {
+  rootEl = document.getElementById('view-analysis');
+  cacheElements();
+  bindEvents();
+
+  const next = initialState ? cloneState(initialState) : standardDeal(true);
+  delete next.result;
+  delete next.winner;
+  state = next;
+  selected.clear();
+  history = [cloneState(state)];
+  historyIndex = 0;
+  if (els.stateJson) {
+    els.stateJson.value = JSON.stringify(serializeState(state), null, 2);
+  }
+  render();
+}
+
+export function getAnalysisState() {
+  return cloneState(state);
+}
