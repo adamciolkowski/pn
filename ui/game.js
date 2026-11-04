@@ -1,4 +1,4 @@
-/** Pan card game logic (Kurnik rules, 2-player analysis). */
+/** Pan card game logic (2-player analysis). */
 
 export const RANKS = ['9', '10', 'J', 'Q', 'K', 'A'];
 export const SUITS = ['H', 'D', 'C', 'S'];

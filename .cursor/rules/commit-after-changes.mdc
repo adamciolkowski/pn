@@ -1,0 +1,16 @@
+---
+description: Create a git commit after each completed change in this repo
+alwaysApply: true
+---
+
+# Commit after every change
+
+When you finish a user-requested change in this repository (code, config, or docs):
+
+1. Ensure the working tree reflects only that work.
+2. Create a git commit with a concise message focused on **why**.
+3. Do not push unless the user asks.
+
+If a change fails or is incomplete, do not commit until it is fixed or the user stops the task.
+
+This project expects frequent small commits rather than batching unrelated edits.
