@@ -240,8 +240,6 @@ function render() {
   els.p0Count.textContent = `${state.players[0].hand.length} cards`;
   els.p1Count.textContent = `${state.players[1].hand.length} cards`;
 
-  els.currentPlayer.value = String(state.currentPlayer);
-
   els.btnUndo.disabled = historyIndex <= 0;
   els.btnRedo.disabled = historyIndex >= history.length - 1;
 
