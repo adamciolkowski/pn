@@ -11,14 +11,14 @@ public class RankCounts {
     private static final Rank[] RANKS = Rank.values();
     private static final Suit[] SUITS = Suit.values();
 
-    private final int[] counts;
+    private final byte[] counts;
 
-    private RankCounts(int[] counts) {
+    private RankCounts(byte[] counts) {
         this.counts = counts;
     }
 
     public static RankCounts fromRanks(List<Rank> ranks) {
-        int[] counts = new int[RANKS.length];
+        byte[] counts = new byte[RANKS.length];
         for (Rank rank : ranks) {
             counts[rank.ordinal()]++;
         }
@@ -26,7 +26,7 @@ public class RankCounts {
     }
 
     public static RankCounts from(List<Card> cards) {
-        int[] counts = new int[RANKS.length];
+        byte[] counts = new byte[RANKS.length];
         for (Card card : cards) {
             counts[card.rank().ordinal()]++;
         }
@@ -34,7 +34,7 @@ public class RankCounts {
     }
 
     public boolean isEmpty() {
-        for (int count : counts) {
+        for (byte count : counts) {
             if (count != 0) {
                 return false;
             }
@@ -44,7 +44,7 @@ public class RankCounts {
 
     public int totalCount() {
         int total = 0;
-        for (int count : counts) {
+        for (byte count : counts) {
             total += count;
         }
         return total;
@@ -55,7 +55,7 @@ public class RankCounts {
     }
 
     public RankCounts removeRank(Rank rank) {
-        int[] copy = counts.clone();
+        byte[] copy = counts.clone();
         copy[rank.ordinal()]--;
         return new RankCounts(copy);
     }
@@ -69,13 +69,13 @@ public class RankCounts {
     }
 
     public RankCounts removeFourCards(Rank rank) {
-        int[] copy = counts.clone();
+        byte[] copy = counts.clone();
         copy[rank.ordinal()] = 0;
         return new RankCounts(copy);
     }
 
     public RankCounts add(RankCounts other) {
-        int[] copy = counts.clone();
+        byte[] copy = counts.clone();
         for (int i = 0; i < copy.length; i++) {
             copy[i] += other.counts[i];
         }
@@ -83,7 +83,7 @@ public class RankCounts {
     }
 
     public RankCounts add(CardSet more) {
-        int[] copy = counts.clone();
+        byte[] copy = counts.clone();
         for (Iterator<Card> cards = more.cards(); cards.hasNext(); ) {
             Card card = cards.next();
             copy[card.rank().ordinal()]++;
